@@ -1,0 +1,40 @@
+import argparse
+from data import get_dataset
+from model import get_model
+from train_recolor import RecolorizeTrainer
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Training arguments for the Recolorization Trainer")
+
+    # Model and dataset parameters
+    parser.add_argument("--train_batch_size", type=int, default=8, help="Batch size for training")
+    parser.add_argument("--val_batch_size", type=int, default=8, help="Batch size for evaluation")
+    parser.add_argument("--learning_rate", type=float, default=5e-5, help="Learning rate")
+    parser.add_argument("--num_epochs", type=int, default=3, help="Number of training epochs")
+
+    # Logging and validation intervals
+    parser.add_argument("--logging_interval", type=int, default=1, help="Interval (in epochs) for logging training loss to WandB")
+    parser.add_argument("--validation_interval", type=int, default=1, help="Interval (in epochs) for running evaluation")
+
+    # WandB parameters
+    parser.add_argument("--project_name", type=str, default="Recolorization", help="WandB project name")
+    parser.add_argument("--run_name", type=str, default=None, help="Optional run name for WandB. If None, will be timestamped")
+
+    # Dataset paths
+    parser.add_argument("--train_data_path", type=str, required=True, help="Path to the training data")
+    parser.add_argument("--val_data_path", type=str, required=True, help="Path to the validation data")
+
+    args = parser.parse_args()
+    return args
+
+
+def run_training():
+    args = parse_args()
+    model = get_model()
+    train_data = get_dataset(args.train_data_path)
+    val_data = get_dataset(args.val_data_path)
+    trainer = RecolorizeTrainer(model, train_dataset=train_data, eval_dataset=val_data, args=args)
+    trainer.train()
+
+if __name__ == "__main__":
+    run_training()
