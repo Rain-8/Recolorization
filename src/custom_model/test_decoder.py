@@ -6,7 +6,7 @@ if __name__=="__main__":
     # Define input dimensions
     batch_size = 4
     height, width = 32, 32  # Adjust as needed based on your model's requirements
-    palette_height, palette_width = 16, 4  # Dimensions for the target_palettes image
+    palette_height, palette_width = 4, 60  # Dimensions for the target_palettes image
 
     # Instantiate the model
     model = RecoloringDecoder(palette_embedding_dim=64, num_heads=4)

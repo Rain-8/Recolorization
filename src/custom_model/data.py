@@ -1,10 +1,10 @@
 import json
 import cv2
 import numpy as np
-from PIL import Image
 from skimage.color import rgb2lab
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
+
 import torch
 from torch.utils.data import Dataset
 from torchvision import transforms

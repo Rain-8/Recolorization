@@ -57,7 +57,7 @@ class RecoloringDecoder(nn.Module):
     def __init__(self, palette_embedding_dim=64, num_heads=4):
         super().__init__()
         self.palette_embedding_dim = palette_embedding_dim
-        self.palette_fc = nn.Linear(4 * 16 * 4, palette_embedding_dim)
+        self.palette_fc = nn.Linear(4 * 60 * 4, palette_embedding_dim)
         self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)  
 
         # Cross-attention layers for palette conditioning at each decoding stage
