@@ -46,10 +46,12 @@ class CrossAttention(nn.Module):
         # Concatenate attention output with the original feature map
         return torch.cat([x, attn_output], dim=1)  # Concatenate along the channel dimension
 
+
 def adjust_target_palettes(target_palettes_emb, h, w):
     # Starting with the initial target_palettes shape
     target_palettes = target_palettes_emb.unsqueeze(2).unsqueeze(3).repeat(1, 1, h, w)
     return target_palettes
+
 
 class RecoloringDecoder(nn.Module):
     def __init__(self, palette_embedding_dim=64, num_heads=4):
