@@ -15,6 +15,7 @@ def parse_args():
     # Logging and validation intervals
     parser.add_argument("--logging_interval", type=int, default=1, help="Interval (in epochs) for logging training loss to WandB")
     parser.add_argument("--validation_interval", type=int, default=1, help="Interval (in epochs) for running evaluation")
+    parser.add_argument("--checkpointing_interval", type=int, default=1, help="Interval (in epochs) for saving checkpoint")
 
     # WandB parameters
     parser.add_argument("--project_name", type=str, default="Recolorization", help="WandB project name")
@@ -23,6 +24,9 @@ def parse_args():
     # Dataset paths
     parser.add_argument("--train_data_path", type=str, required=True, help="Path to the training data")
     parser.add_argument("--val_data_path", type=str, required=True, help="Path to the validation data")
+
+    #checkpoint dir
+    parser.add_argument("--checkpoint_dir", type=str, default="recolor_model_ckpts", help="Directory to save checkpoints")
 
     args = parser.parse_args()
     return args

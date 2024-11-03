@@ -1,3 +1,4 @@
+import os
 from tqdm import tqdm
 from datetime import datetime
 
@@ -21,7 +22,9 @@ class RecolorizeTrainer:
         self.val_batch_size = args.val_batch_size
         self.validation_interval = args.validation_interval
         self.logging_interval = args.logging_interval
-        
+        self.checkpointing_interval = args.checkpointing_interval
+        self.checkpoint_dir = args.checkpoint_dir
+
         self.run_name = args.run_name
         if args.run_name is None:
             self.run_name = f"recolorization_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
@@ -71,6 +74,9 @@ class RecolorizeTrainer:
             if epoch % self.logging_interval == 0:
                 wandb.log({"epoch_train_loss": avg_train_loss, "epoch": epoch + 1})
             
+            if epoch % self.checkpointing_interval == 0:
+                self.save_checkpoint(epoch)
+
             # Evaluate at the end of each epoch
             if epoch % self.validation_interval == 0:
                 self.evaluate()
@@ -87,3 +93,16 @@ class RecolorizeTrainer:
         
         avg_loss = total_loss / num_batches
         print(f"Validation Loss: {avg_loss}")
+
+    def save_checkpoint(self, epoch):
+        """Save a checkpoint with the current epoch number."""
+        checkpoint = {
+            "epoch": epoch,
+            "model_state_dict": self.model.state_dict(),
+            "optimizer_state_dict": self.optimizer.state_dict(),
+            "run_name": self.run_name,
+        }
+        os.makedirs(self.checkpoint_dir, exist_ok=True)
+        checkpoint_path = os.path.join(self.checkpoint_dir, f"checkpoint_epoch_{epoch}.pt")
+        torch.save(checkpoint, checkpoint_path)
+        print(f"Checkpoint saved: {checkpoint_path}")
