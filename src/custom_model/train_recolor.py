@@ -1,9 +1,12 @@
+from tqdm import tqdm
+from datetime import datetime
+
 import torch
 from torch.optim import Adam
 from torch.utils.data import DataLoader
 
 from accelerate import Accelerator
-from tqdm import tqdm
+import wandb
 
 class RecolorizeTrainer:
     def __init__(self, model, train_dataset, eval_dataset, args):
@@ -19,6 +22,11 @@ class RecolorizeTrainer:
         self.validation_interval = args.validation_interval
         self.logging_interval = args.logging_interval
         
+        self.run_name = args.run_name
+        if args.run_name is None:
+            self.run_name = f"recolorization_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+
+        wandb.init(project=args.project_name, name=self.run_name)
 
         # Initialize dataloaders
         self.train_dataloader = DataLoader(train_dataset, batch_size=self.train_batch_size, shuffle=True)
@@ -45,6 +53,7 @@ class RecolorizeTrainer:
         for epoch in range(self.num_epochs):
             print(f"Epoch {epoch + 1}/{self.num_epochs}")
             progress_bar = tqdm(self.train_dataloader, disable=not self.accelerator.is_local_main_process)
+            total_loss = 0.0
             for batch in progress_bar:
                 # Forward pass
                 outputs = self.model(**batch)
@@ -55,8 +64,13 @@ class RecolorizeTrainer:
                 self.optimizer.step()
                 self.lr_scheduler.step()
                 self.optimizer.zero_grad()
+                total_loss += loss.item()
                 progress_bar.set_postfix({"loss": loss.item()})
 
+            avg_train_loss = total_loss / len(self.train_dataloader)
+            if epoch % self.logging_interval == 0:
+                wandb.log({"epoch_train_loss": avg_train_loss, "epoch": epoch + 1})
+            
             # Evaluate at the end of each epoch
             if epoch % self.validation_interval == 0:
                 self.evaluate()
