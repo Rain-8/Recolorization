@@ -77,25 +77,26 @@ class FeatureEncoder(nn.Module):
     def forward(self, x):
         # Encoding stage 1
         x = self.dconv_down_1(x)
-        x = self.res1(x)
+        
         x = self.self_attn_1(x)  # Self-attention without changing channels
         c1 = self.pool(x)  # Shape should be [batch_size, 64, 32, 32]
 
         # Encoding stage 2
         x = self.dconv_down_2(c1)
-        x = self.res2(x)
+        x = self.res1(x)
         x = self.self_attn_2(x)  # Self-attention without changing channels
         c2 = self.pool(x)  # Shape should be [batch_size, 128, 16, 16]
 
         # Encoding stage 3
         x = self.dconv_down_3(c2)
-        x = self.res3(x)
+        x = self.res2(x)
         x = self.self_attn_3(x)  # Self-attention without changing channels
         c3 = self.pool(x)  # Shape should be [batch_size, 256, 8, 8]
 
         # Encoding stage 4 (no additional pooling)
-        c4 = self.dconv_down_4(c3)  # Shape should be [batch_size, 512, 8, 8]
-
+        x = self.dconv_down_4(c3)  # Shape should be [batch_size, 512, 8, 8]
+        x = self.res3(x)
+        c4 = self.pool(x) 
         return c1, c2, c3, c4
 
 
