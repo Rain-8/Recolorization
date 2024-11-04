@@ -54,7 +54,7 @@ class FeatureEncoder(nn.Module):
         super(FeatureEncoder, self).__init__()
 
         # DoubleConv layers without pooling to retain spatial dimensions
-        self.dconv_down_1 = DoubleConv(in_channels, 64)
+        self.dconv_down_1 = DoubleConv(3, 64)
         self.dconv_down_2 = DoubleConv(64, 128)
         self.dconv_down_3 = DoubleConv(128, 256)
         self.dconv_down_4 = DoubleConv(256, 512)
