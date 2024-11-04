@@ -145,7 +145,7 @@ class FeatureEncoder(nn.Module):
         x = self.dconv_down_1(x)
         x = self.res1(x)
         x = self.self_attn_1(x)  # Self-attention without changing channels
-        c1 = self.pool(x)  # Save for use in the decoder
+        c1 = x  # Save for use in the decoder
 
         # Encoding stage 2
         x = self.dconv_down_2(c1)
