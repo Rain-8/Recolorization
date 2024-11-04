@@ -89,8 +89,10 @@ class RecolorizeTrainer:
         num_batches = len(self.eval_dataloader)
         with torch.no_grad():
             for batch in self.eval_dataloader:
-                outputs = self.model(**batch)
-                total_loss += outputs.loss.item()
+                src_image, tgt_image, illu, src_palette, tgt_palette = batch
+                outputs = self.model(src_image, tgt_palette, illu)
+                val_loss = self.criterion(outputs, tgt_image)
+                total_loss += val_loss.item()
         
         avg_loss = total_loss / num_batches
         print(f"Validation Loss: {avg_loss}")
