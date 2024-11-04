@@ -107,7 +107,7 @@ class ResNetBasicBlock(ResidualBlock):
 class ResNetLayer(nn.Module):
     def __init__(self, in_channels, out_channels, block=ResNetBasicBlock, n=1):
         super().__init__()
-        downsampling = 2 if in_channels != out_channels else 1
+        downsampling = 1 if in_channels != out_channels else 1
         self.blocks = nn.Sequential(
             block(in_channels, out_channels, downsampling=downsampling),  # Removed *args, **kwargs
             *[block(out_channels * block.expansion, out_channels, downsampling=1) for _ in range(n - 1)]
