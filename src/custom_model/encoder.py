@@ -3,12 +3,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class DoubleConv(nn.Module):
-    """(convolution => Instance Norm => Leaky ReLU) * 2"""
     def __init__(self, in_channels, out_channels):
-        super().__init__()
+        super(DoubleConv, self).__init__()
         self.double_conv = nn.Sequential(
             nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1, bias=False),
-            #nn.InstanceNorm2d(out_channels),
             nn.BatchNorm2d(out_channels),
             nn.LeakyReLU(inplace=True),
             nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1, bias=False),
@@ -19,13 +17,6 @@ class DoubleConv(nn.Module):
     def forward(self, x):
         return self.double_conv(x)
 
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-
-import torch
-import torch.nn as nn
-
 class SelfAttention(nn.Module):
     def __init__(self, embed_dim, num_heads):
         super(SelfAttention, self).__init__()
@@ -34,103 +25,46 @@ class SelfAttention(nn.Module):
         self.multihead_attn = nn.MultiheadAttention(embed_dim, num_heads)
 
     def forward(self, x):
-        b, c, h, w = x.shape  # Expected shape: (batch_size, channels, height, width)
-        
-        # Ensure the input channel dimension matches the embed dimension
-        if c != self.embed_dim:
-            raise ValueError(f"Channel dimension {c} does not match embed_dim {self.embed_dim}")
-
-        print(f"Input shape: {x.shape}")  # Debugging statement
-        
-        # Flatten spatial dimensions and permute for multi-head attention: (sequence_length, batch_size, embed_dim)
-        x = x.view(b, c, h * w).permute(2, 0, 1)  # Shape: (sequence_length, batch_size, embed_dim)
-        print(f"Flattened and permuted shape: {x.shape}")  # Debugging statement
-        
-        # Apply self-attention
+        b, c, h, w = x.shape
+        x = x.view(b, c, h * w).permute(2, 0, 1)
         attn_output, _ = self.multihead_attn(x, x, x)
-        print(f"Attention output shape: {attn_output.shape}")  # Debugging statement
-
-        # Reshape the attention output back to (batch_size, channels, height, width)
-        attn_output = attn_output.permute(1, 2, 0).reshape(b, c, h, w)  # Using .reshape() instead of .view()
-        print(f"Output reshaped back to original spatial dimensions: {attn_output.shape}")  # Debugging statement
-
+        attn_output = attn_output.permute(1, 2, 0).reshape(b, c, h, w)
         return x.permute(1, 2, 0).reshape(b, c, h, w) + attn_output
 
-
-
 class ResidualBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, activation='relu'):
+    def __init__(self, in_channels, out_channels):
         super().__init__()
-        self.in_channels, self.out_channels, self.activation = in_channels, out_channels, activation
-        self.blocks = nn.Identity()
-        self.activate = nn.ReLU(inplace=True) if activation == 'relu' else nn.LeakyReLU(inplace=True)
-        self.shortcut = nn.Identity()
-    
-    def forward(self, x):
-        residual = x
-        if self.should_apply_shortcut:
-            residual = self.shortcut(x)
-        x = self.blocks(x)
-        x += residual
-        x = self.activate(x)
-        return x
-    
-    @property
-    def should_apply_shortcut(self):
-        return self.in_channels != self.out_channels
-
-class ResNetBasicBlock(ResidualBlock):
-    expansion = 1
-    def __init__(self, in_channels, out_channels, downsampling=1):
-        super().__init__(in_channels, out_channels)
-        self.blocks = nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=downsampling, padding=1, bias=False),
-            nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1, bias=False),
-            nn.BatchNorm2d(out_channels)
-        )
-        # Define the shortcut path if dimensions do not match
+        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(out_channels)
+        self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1, bias=False)
+        self.bn2 = nn.BatchNorm2d(out_channels)
         self.shortcut = nn.Sequential()
-        if downsampling != 1 or in_channels != out_channels:
+        if in_channels != out_channels:
             self.shortcut = nn.Sequential(
-                nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=downsampling, bias=False),
+                nn.Conv2d(in_channels, out_channels, kernel_size=1, bias=False),
                 nn.BatchNorm2d(out_channels)
             )
 
     def forward(self, x):
-        identity = self.shortcut(x)  # Either the original input or downsampled version
-        out = self.blocks(x)
-        out += identity  # Add the skip connection (F(x) + x)
+        out = F.relu(self.bn1(self.conv1(x)))
+        out = self.bn2(self.conv2(out))
+        out += self.shortcut(x)
         return F.relu(out)
-
-class ResNetLayer(nn.Module):
-    def __init__(self, in_channels, out_channels, block=ResNetBasicBlock, n=1):
-        super().__init__()
-        downsampling = 2 if in_channels != out_channels else 1
-        self.blocks = nn.Sequential(
-            block(in_channels, out_channels, downsampling=downsampling),  # Removed *args, **kwargs
-            *[block(out_channels * block.expansion, out_channels, downsampling=1) for _ in range(n - 1)]
-        )
-
-    def forward(self, x):
-        return self.blocks(x)
-
 
 class FeatureEncoder(nn.Module):
     def __init__(self, in_channels=3, num_heads=4):
-        super().__init__()
+        super(FeatureEncoder, self).__init__()
 
-        # DoubleConv layers for each encoding stage
+        # DoubleConv layers followed by pooling for each encoding stage
         self.dconv_down_1 = DoubleConv(in_channels, 64)
         self.dconv_down_2 = DoubleConv(64, 128)
         self.dconv_down_3 = DoubleConv(128, 256)
         self.dconv_down_4 = DoubleConv(256, 512)
 
-        # ResNet layers for each encoding stage
-        self.res1 = ResNetLayer(64, 64)
-        self.res2 = ResNetLayer(128, 128)
-        self.res3 = ResNetLayer(256, 256)
+        # ResNet layers to keep spatial dimensions consistent
+        self.res1 = ResidualBlock(64, 64)
+        self.res2 = ResidualBlock(128, 128)
+        self.res3 = ResidualBlock(256, 256)
 
         # Self-attention layers for each encoding stage
         self.self_attn_1 = SelfAttention(64, num_heads)
@@ -141,34 +75,29 @@ class FeatureEncoder(nn.Module):
         self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
 
     def forward(self, x):
-         # Encoding stage 1
+        # Encoding stage 1
         x = self.dconv_down_1(x)
-        x = self.pool(x)
-        
-        c1 = x  # Shape should be [batch_size, 64, 32, 32]
+        x = self.res1(x)
+        x = self.self_attn_1(x)  # Self-attention without changing channels
+        c1 = self.pool(x)  # Shape should be [batch_size, 64, 32, 32]
 
         # Encoding stage 2
         x = self.dconv_down_2(c1)
-        x = self.pool(x)
-        x = self.res1(x)
-        x = self.self_attn_1(x)
-        c2 = x  # Shape should be [batch_size, 128, 16, 16]
+        x = self.res2(x)
+        x = self.self_attn_2(x)  # Self-attention without changing channels
+        c2 = self.pool(x)  # Shape should be [batch_size, 128, 16, 16]
 
         # Encoding stage 3
-        x = self.dconv_down_2(c2)
-        x = self.pool(x)
-        x = self.res2(x)
-        x = self.self_attn_2(x)
-        c3 = x  # Shape should be [batch_size, 256, 8, 8]
+        x = self.dconv_down_3(c2)
+        x = self.res3(x)
+        x = self.self_attn_3(x)  # Self-attention without changing channels
+        c3 = self.pool(x)  # Shape should be [batch_size, 256, 8, 8]
 
         # Encoding stage 4 (no additional pooling)
-        x = self.dconv_down_4(c3)  # Shape should be [batch_size, 512, 8, 8]
-        x = self.pool(x)
-        x = self.res3(x)
-        x = self.self_attn_3(x)
-        c4 = x
+        c4 = self.dconv_down_4(c3)  # Shape should be [batch_size, 512, 8, 8]
 
         return c1, c2, c3, c4
+
 
 
 
