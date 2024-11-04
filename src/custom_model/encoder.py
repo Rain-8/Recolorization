@@ -79,6 +79,7 @@ class FeatureEncoder(nn.Module):
         self.pool1 = nn.MaxPool2d(kernel_size=2, stride=1)
         self.pool2 = nn.MaxPool2d(kernel_size=2, stride=1)
         self.pool3 = nn.MaxPool2d(kernel_size=2, stride=1)
+        self.pool4 = nn.MaxPool2d(kernel_size=2, stride=1)
 
     def forward(self, x):
         # Encoding stage 1
@@ -119,7 +120,7 @@ class FeatureEncoder(nn.Module):
         print("After ResNet Block 4:", x.shape)
         x = self.self_attn_4(x)
         print("After Self-Attention 4:", x.shape)
-        c3 = self.pool4(x)
+        c4 = self.pool4(x)
         print("After Pooling 4 (c3):", c4.shape)
 
         return c1, c2, c3, c4
