@@ -82,7 +82,7 @@ def process_images(src_dir, tgt_dir):
     os.makedirs(f"{tgt_dir}/src_images", exist_ok=True)
     os.makedirs(f"{tgt_dir}/tgt_images", exist_ok=True)
     json_data = {}
-    image_paths = sorted(glob.glob(f"{src_dir}/*.jpeg"))
+    image_paths = sorted(glob.glob(f"{src_dir}/*.jpg"))
 
     for image_path in image_paths[:10]:
         try:
