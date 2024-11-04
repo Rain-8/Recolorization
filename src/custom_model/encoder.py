@@ -107,7 +107,7 @@ class ResNetBasicBlock(ResidualBlock):
 class ResNetLayer(nn.Module):
     def __init__(self, in_channels, out_channels, block=ResNetBasicBlock, n=1):
         super().__init__()
-        downsampling = 1 if in_channels != out_channels else 1
+        downsampling = 2 if in_channels != out_channels else 1
         self.blocks = nn.Sequential(
             block(in_channels, out_channels, downsampling=downsampling),  # Removed *args, **kwargs
             *[block(out_channels * block.expansion, out_channels, downsampling=1) for _ in range(n - 1)]
@@ -144,26 +144,29 @@ class FeatureEncoder(nn.Module):
          # Encoding stage 1
         x = self.dconv_down_1(x)
         x = self.pool(x)
-        x = self.res1(x)
-        x = self.self_attn_1(x)
+        
         c1 = x  # Shape should be [batch_size, 64, 32, 32]
 
         # Encoding stage 2
         x = self.dconv_down_2(c1)
         x = self.pool(x)
-        x = self.res2(x)
-        x = self.self_attn_2(x)
+        x = self.res1(x)
+        x = self.self_attn_1(x)
         c2 = x  # Shape should be [batch_size, 128, 16, 16]
 
         # Encoding stage 3
-        x = self.dconv_down_3(c2)
+        x = self.dconv_down_2(c2)
         x = self.pool(x)
-        x = self.res3(x)
-        x = self.self_attn_3(x)
+        x = self.res2(x)
+        x = self.self_attn_2(x)
         c3 = x  # Shape should be [batch_size, 256, 8, 8]
 
         # Encoding stage 4 (no additional pooling)
-        c4 = self.dconv_down_4(c3)  # Shape should be [batch_size, 512, 8, 8]
+        x = self.dconv_down_4(c3)  # Shape should be [batch_size, 512, 8, 8]
+        x = self.pool(x)
+        x = self.res3(x)
+        x = self.self_attn_3(x)
+        c4 = x
 
         return c1, c2, c3, c4
 
