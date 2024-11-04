@@ -31,24 +31,31 @@ class SelfAttention(nn.Module):
         self.multihead_attn = nn.MultiheadAttention(embed_dim, num_heads)
 
     def forward(self, x):
-        b, c, h, w = x.shape  # (batch_size, channels, height, width)
-
+        b, c, h, w = x.shape  # Expected shape: (batch_size, channels, height, width)
+        
         # Ensure the input channel dimension matches the embed dimension
         if c != self.embed_dim:
             raise ValueError(f"Channel dimension {c} does not match embed_dim {self.embed_dim}")
 
-        # Flatten spatial dimensions and permute for attention
+        print(f"Input shape: {x.shape}")  # Debugging statement
+        
+        # Flatten spatial dimensions and permute for multi-head attention: (sequence_length, batch_size, embed_dim)
         x = x.view(b, c, h * w).permute(2, 0, 1)  # Shape: (sequence_length, batch_size, embed_dim)
-
-        # Use the same input for q, k, v directly
-        attn_output, _ = self.multihead_attn(x, x, x)
-
-        # Reshape the output back to (batch_size, channels, height, width)
+        print(f"Flattened and permuted shape: {x.shape}")  # Debugging statement
+        
+        # Apply self-attention
+        try:
+            attn_output, _ = self.multihead_attn(x, x, x)
+            print(f"Attention output shape: {attn_output.shape}")  # Debugging statement
+        except RuntimeError as e:
+            print(f"RuntimeError during attention: {e}")
+            return None
+        
+        # Reshape the attention output back to (batch_size, channels, height, width)
         attn_output = attn_output.permute(1, 2, 0).view(b, c, h, w)  # Shape: (b, c, h, w)
+        print(f"Output reshaped back to original spatial dimensions: {attn_output.shape}")  # Debugging statement
 
-        # Return element-wise addition for simplicity
         return x.view(b, c, h, w) + attn_output
-
 
 
 class ResidualBlock(nn.Module):
