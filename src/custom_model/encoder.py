@@ -81,8 +81,8 @@ class ResidualBlock(nn.Module):
 
 class ResNetBasicBlock(ResidualBlock):
     expansion = 1
-    def __init__(self, in_channels, out_channels, downsampling=1, *args, **kwargs):
-        super().__init__(in_channels, out_channels, *args, **kwargs)
+    def __init__(self, in_channels, out_channels, downsampling=1):
+        super().__init__(in_channels, out_channels)
         self.blocks = nn.Sequential(
             nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=downsampling, padding=1, bias=False),
             nn.BatchNorm2d(out_channels),
