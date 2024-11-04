@@ -53,19 +53,19 @@ class FeatureEncoder(nn.Module):
     def __init__(self, in_channels=3, num_heads=4):
         super(FeatureEncoder, self).__init__()
 
-        # DoubleConv layers without pooling to retain spatial dimensions
+        # DoubleConv layers
         self.dconv_down_1 = DoubleConv(3, 64)
         self.dconv_down_2 = DoubleConv(64, 128)
         self.dconv_down_3 = DoubleConv(128, 256)
         self.dconv_down_4 = DoubleConv(256, 512)
 
-        # ResNet layers without downsampling to maintain input dimensions
+        # ResNet layers
         self.res1 = ResidualBlock(64, 64)
         self.res2 = ResidualBlock(128, 128)
         self.res3 = ResidualBlock(256, 256)
         self.res4 = ResidualBlock(512, 512)
-        
-        # Self-attention layers for each encoding stage
+
+        # Self-attention layers
         self.self_attn_1 = SelfAttention(64, num_heads)
         self.self_attn_2 = SelfAttention(128, num_heads)
         self.self_attn_3 = SelfAttention(256, num_heads)
@@ -105,7 +105,7 @@ class FeatureEncoder(nn.Module):
         c3 = self.pool(x)
         print("After Pooling 3 (c3):", c3.shape)
 
-        # Encoding stage 4 (without further downsampling)
+        # Encoding stage 4
         x = self.dconv_down_4(c3)
         print("\nAfter DoubleConv 4:", x.shape)
         x = self.res4(x)
@@ -116,6 +116,13 @@ class FeatureEncoder(nn.Module):
         print("Final Output (c4):", c4.shape)
 
         return c1, c2, c3, c4
+
+# Sample test with input [4, 3, 64, 64]
+if __name__ == "__main__":
+    model = FeatureEncoder(in_channels=3, num_heads=4)
+    x = torch.randn(4, 3, 64, 64)  # Batch of 4 images, each 64x64 with 3 channels (RGB)
+    c1, c2, c3, c4 = model(x)
+
 
 
  
