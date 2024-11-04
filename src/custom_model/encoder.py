@@ -3,7 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class DoubleConv(nn.Module):
-    """(convolution => Batch Norm => Leaky ReLU) * 2"""
     def __init__(self, in_channels, out_channels):
         super(DoubleConv, self).__init__()
         self.double_conv = nn.Sequential(
@@ -21,8 +20,6 @@ class DoubleConv(nn.Module):
 class SelfAttention(nn.Module):
     def __init__(self, embed_dim, num_heads):
         super(SelfAttention, self).__init__()
-        self.embed_dim = embed_dim
-        self.num_heads = num_heads
         self.multihead_attn = nn.MultiheadAttention(embed_dim, num_heads)
 
     def forward(self, x):
@@ -68,7 +65,6 @@ class FeatureEncoder(nn.Module):
         self.res3 = ResidualBlock(256, 256)
         self.res4 = ResidualBlock(512, 512)
         
-
         # Self-attention layers for each encoding stage
         self.self_attn_1 = SelfAttention(64, num_heads)
         self.self_attn_2 = SelfAttention(128, num_heads)
@@ -76,10 +72,7 @@ class FeatureEncoder(nn.Module):
         self.self_attn_4 = SelfAttention(512, num_heads)
 
         # Pooling layer for selective downsampling
-        self.pool1 = nn.MaxPool2d(kernel_size=2, stride=1)
-        self.pool2 = nn.MaxPool2d(kernel_size=2, stride=1)
-        self.pool3 = nn.MaxPool2d(kernel_size=2, stride=1)
-        self.pool4 = nn.MaxPool2d(kernel_size=2, stride=1)
+        self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
 
     def forward(self, x):
         # Encoding stage 1
@@ -89,7 +82,7 @@ class FeatureEncoder(nn.Module):
         print("After ResNet Block 1:", x.shape)
         x = self.self_attn_1(x)
         print("After Self-Attention 1:", x.shape)
-        c1 = self.pool1(x)
+        c1 = self.pool(x)
         print("After Pooling 1 (c1):", c1.shape)
 
         # Encoding stage 2
@@ -99,7 +92,7 @@ class FeatureEncoder(nn.Module):
         print("After ResNet Block 2:", x.shape)
         x = self.self_attn_2(x)
         print("After Self-Attention 2:", x.shape)
-        c2 = self.pool2(x)
+        c2 = self.pool(x)
         print("After Pooling 2 (c2):", c2.shape)
 
         # Encoding stage 3
@@ -109,21 +102,23 @@ class FeatureEncoder(nn.Module):
         print("After ResNet Block 3:", x.shape)
         x = self.self_attn_3(x)
         print("After Self-Attention 3:", x.shape)
-        c3 = self.pool3(x)
+        c3 = self.pool(x)
         print("After Pooling 3 (c3):", c3.shape)
 
         # Encoding stage 4 (without further downsampling)
-       
         x = self.dconv_down_4(c3)
         print("\nAfter DoubleConv 4:", x.shape)
         x = self.res4(x)
         print("After ResNet Block 4:", x.shape)
         x = self.self_attn_4(x)
         print("After Self-Attention 4:", x.shape)
-        c4 = self.pool4(x)
-        print("After Pooling 4 (c3):", c4.shape)
+        c4 = x  # Final output without pooling
+        print("Final Output (c4):", c4.shape)
 
         return c1, c2, c3, c4
+
+
+ 
 
 
 
