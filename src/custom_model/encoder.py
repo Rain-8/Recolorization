@@ -19,34 +19,45 @@ class DoubleConv(nn.Module):
     def forward(self, x):
         return self.double_conv(x)
 
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
 class SelfAttention(nn.Module):
-    """Applies self-attention within a feature map."""
     def __init__(self, embed_dim, num_heads):
-        super().__init__()
+        super(SelfAttention, self).__init__()
         self.multihead_attn = nn.MultiheadAttention(embed_dim, num_heads)
-        
-        # Query, Key, Value projections for self-attention mechanism
-        self.linear_q = nn.Linear(embed_dim, embed_dim)  # Query projection
-        self.linear_k = nn.Linear(embed_dim, embed_dim)  # Key projection
-        self.linear_v = nn.Linear(embed_dim, embed_dim)  # Value projection
+
+        # Linear layers for query, key, and value projections
+        self.linear_q = nn.Linear(embed_dim, embed_dim)
+        self.linear_k = nn.Linear(embed_dim, embed_dim)
+        self.linear_v = nn.Linear(embed_dim, embed_dim)
 
     def forward(self, x):
-        b, c, h, w = x.shape
-    
-        # Flatten the spatial dimensions and prepare for attention
+        # Check input dimensions and prepare for multi-head attention
+        b, c, h, w = x.shape  # (batch, channels, height, width)
+
+        # Ensure that the channels match the expected embedding dimension
+        if c != self.linear_q.in_features:
+            raise ValueError(f"Expected input with {self.linear_q.in_features} channels, but got {c} channels.")
+
+        # Flatten spatial dimensions and permute for attention: (sequence_length, batch_size, embedding_dim)
         x_flat = x.view(b, c, h * w).permute(2, 0, 1)  # Shape: (h * w, batch, channels)
-        
-        # Project the feature map into queries, keys, and values
-        q = self.linear_q(x_flat)  # Query projection
-        k = self.linear_k(x_flat)  # Key projection
-        v = self.linear_v(x_flat)  # Value projection
-    
+
+        # Project the input to queries, keys, and values
+        q = self.linear_q(x_flat)
+        k = self.linear_k(x_flat)
+        v = self.linear_v(x_flat)
+
         # Apply multi-head attention
         attn_output, _ = self.multihead_attn(q, k, v)
-        attn_output = attn_output.permute(1, 2, 0).view(b, c, h, w)  # Reshape back to (b, c, h, w)
-    
-        # Add attention output to the original input instead of concatenating
-        return x + attn_output  # Element-wise addition instead of concatenation
+
+        # Reshape the attention output back to (batch, channels, height, width)
+        attn_output = attn_output.permute(1, 2, 0).view(b, c, h, w)
+
+        # Element-wise addition instead of concatenation
+        return x + attn_output
+
 
 
 class ResidualBlock(nn.Module):
