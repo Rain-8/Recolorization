@@ -78,6 +78,19 @@ class ResNetBasicBlock(ResidualBlock):
             nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(out_channels)
         )
+        # Define the shortcut path if dimensions do not match
+        self.shortcut = nn.Sequential()
+        if downsampling != 1 or in_channels != out_channels:
+            self.shortcut = nn.Sequential(
+                nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=downsampling, bias=False),
+                nn.BatchNorm2d(out_channels)
+            )
+
+    def forward(self, x):
+        identity = self.shortcut(x)  # Either the original input or downsampled version
+        out = self.blocks(x)
+        out += identity  # Add the skip connection (F(x) + x)
+        return F.relu(out)
 
 class ResNetLayer(nn.Module):
     def __init__(self, in_channels, out_channels, block=ResNetBasicBlock, n=1):
