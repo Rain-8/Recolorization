@@ -23,6 +23,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+import torch
+import torch.nn as nn
+
 class SelfAttention(nn.Module):
     def __init__(self, embed_dim, num_heads):
         super(SelfAttention, self).__init__()
@@ -44,18 +47,15 @@ class SelfAttention(nn.Module):
         print(f"Flattened and permuted shape: {x.shape}")  # Debugging statement
         
         # Apply self-attention
-        try:
-            attn_output, _ = self.multihead_attn(x, x, x)
-            print(f"Attention output shape: {attn_output.shape}")  # Debugging statement
-        except RuntimeError as e:
-            print(f"RuntimeError during attention: {e}")
-            return None
-        
+        attn_output, _ = self.multihead_attn(x, x, x)
+        print(f"Attention output shape: {attn_output.shape}")  # Debugging statement
+
         # Reshape the attention output back to (batch_size, channels, height, width)
-        attn_output = attn_output.permute(1, 2, 0).view(b, c, h, w)  # Shape: (b, c, h, w)
+        attn_output = attn_output.permute(1, 2, 0).reshape(b, c, h, w)  # Using .reshape() instead of .view()
         print(f"Output reshaped back to original spatial dimensions: {attn_output.shape}")  # Debugging statement
 
-        return x.view(b, c, h, w) + attn_output
+        return x.permute(1, 2, 0).reshape(b, c, h, w) + attn_output
+
 
 
 class ResidualBlock(nn.Module):
