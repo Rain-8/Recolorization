@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class DoubleConv(nn.Module):
+    """(convolution => Batch Norm => Leaky ReLU) * 2"""
     def __init__(self, in_channels, out_channels):
         super(DoubleConv, self).__init__()
         self.double_conv = nn.Sequential(
@@ -55,13 +56,13 @@ class FeatureEncoder(nn.Module):
     def __init__(self, in_channels=3, num_heads=4):
         super(FeatureEncoder, self).__init__()
 
-        # DoubleConv layers followed by pooling for each encoding stage
+        # DoubleConv layers without pooling to retain spatial dimensions
         self.dconv_down_1 = DoubleConv(in_channels, 64)
         self.dconv_down_2 = DoubleConv(64, 128)
         self.dconv_down_3 = DoubleConv(128, 256)
         self.dconv_down_4 = DoubleConv(256, 512)
 
-        # ResNet layers to keep spatial dimensions consistent
+        # ResNet layers without downsampling to maintain input dimensions
         self.res1 = ResidualBlock(64, 64)
         self.res2 = ResidualBlock(128, 128)
         self.res3 = ResidualBlock(256, 256)
@@ -71,33 +72,35 @@ class FeatureEncoder(nn.Module):
         self.self_attn_2 = SelfAttention(128, num_heads)
         self.self_attn_3 = SelfAttention(256, num_heads)
 
-        # Pooling layer for downsampling
-        self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
+        # Pooling layer for selective downsampling
+        self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2)
+        self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2)
+        self.pool3 = nn.MaxPool2d(kernel_size=2, stride=2)
 
     def forward(self, x):
-        # Encoding stage 1
+        # Encoding stage 1: Apply DoubleConv, ResNet, Self-Attention, and Pooling
         x = self.dconv_down_1(x)
-        
-        x = self.self_attn_1(x)  # Self-attention without changing channels
-        c1 = self.pool(x)  # Shape should be [batch_size, 64, 32, 32]
+        x = self.res1(x)
+        x = self.self_attn_1(x)
+        c1 = self.pool1(x)  # Expected shape: [batch, 64, 32, 32]
 
         # Encoding stage 2
         x = self.dconv_down_2(c1)
-        x = self.res1(x)
-        x = self.self_attn_2(x)  # Self-attention without changing channels
-        c2 = self.pool(x)  # Shape should be [batch_size, 128, 16, 16]
+        x = self.res2(x)
+        x = self.self_attn_2(x)
+        c2 = self.pool2(x)  # Expected shape: [batch, 128, 16, 16]
 
         # Encoding stage 3
         x = self.dconv_down_3(c2)
-        x = self.res2(x)
-        x = self.self_attn_3(x)  # Self-attention without changing channels
-        c3 = self.pool(x)  # Shape should be [batch_size, 256, 8, 8]
-
-        # Encoding stage 4 (no additional pooling)
-        x = self.dconv_down_4(c3)  # Shape should be [batch_size, 512, 8, 8]
         x = self.res3(x)
-        c4 = self.pool(x) 
+        x = self.self_attn_3(x)
+        c3 = self.pool3(x)  # Expected shape: [batch, 256, 8, 8]
+
+        # Encoding stage 4 (no further downsampling)
+        c4 = self.dconv_down_4(c3)  # Expected shape: [batch, 512, 8, 8]
+
         return c1, c2, c3, c4
+
 
 
 
