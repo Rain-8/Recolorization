@@ -1,25 +1,29 @@
 import torch
-from encoder import RecoloringEncoder  # Make sure this matches the file name
 
-if __name__ == "__main__":
-    # Define input dimensions
-    batch_size = 4
-    height, width = 128, 128  # Adjust these dimensions as needed
-    palette_height, palette_width = 4, 60  # Dimensions for the target palettes
+# Test script for the FeatureEncoder model
 
-    # Instantiate the model
-    model = RecoloringEncoder(in_channels=3, palette_embedding_dim=64, num_heads=4)
+def test_feature_encoder():
+    # Define test input parameters
+    batch_size = 4       # Number of images in the batch
+    in_channels = 3      # RGB channels
+    height, width = 128, 128  # Dimensions of each image
 
-    # Generate random input tensors
-    x = torch.randn(batch_size, 3, height, width)  # RGB image tensor with shape (batch_size, 3, height, width)
-    target_palettes = torch.randn(batch_size, 4, palette_height, palette_width)  # Palette tensor with shape (batch_size, 4, 4, 60)
+    # Instantiate the FeatureEncoder model
+    model = FeatureEncoder(in_channels=in_channels, num_heads=4)
 
-    # Run the model
-    c1, c2, c3, c4 = model(x, target_palettes)
+    # Generate synthetic test data (batch of RGB images)
+    x = torch.randn(batch_size, in_channels, height, width)  # Shape: (batch_size, in_channels, height, width)
 
-    # Print the shapes of each output to verify
-    print("Output shapes:")
-    print("c1 shape:", c1.shape)  # Expected: (batch_size, 128, height/2, width/2)
-    print("c2 shape:", c2.shape)  # Expected: (batch_size, 256, height/4, width/4)
-    print("c3 shape:", c3.shape)  # Expected: (batch_size, 256, height/8, width/8)
-    print("c4 shape:", c4.shape)  # Expected: (batch_size, 256, height/16, width/16)
+    # Run the model on the test data
+    c1, c2, c3, c4 = model(x)
+
+    # Print the shapes of the outputs
+    print("Test Data Shapes:")
+    print("Input Shape:", x.shape)
+    print("c1 (Stage 1 Output) Shape:", c1.shape)  # After DoubleConv + ResNet + SelfAttention + Pooling
+    print("c2 (Stage 2 Output) Shape:", c2.shape)  # After DoubleConv + ResNet + SelfAttention + Pooling
+    print("c3 (Stage 3 Output) Shape:", c3.shape)  # After DoubleConv + ResNet + SelfAttention + Pooling
+    print("c4 (Final Output) Shape:", c4.shape)    # After final DoubleConv without pooling
+
+# Run the test
+test_feature_encoder()
