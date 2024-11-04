@@ -59,13 +59,13 @@ class RecolorizeTrainer:
             total_loss = 0.0
             for batch in progress_bar:
                 # Forward pass
-                outputs = self.model(**batch)
+                src_image, tgt_image, illu, src_palette, tgt_palette = batch
+                outputs = self.model(src_image, tgt_image, illu, tgt_palette)
                 loss = outputs.loss
                 self.accelerator.backward(loss)
 
                 # Optimization step
                 self.optimizer.step()
-                self.lr_scheduler.step()
                 self.optimizer.zero_grad()
                 total_loss += loss.item()
                 progress_bar.set_postfix({"loss": loss.item()})
