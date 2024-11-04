@@ -38,7 +38,7 @@ class RecolorizeTrainer:
 
         # Initialize dataloaders
         self.train_dataloader = DataLoader(train_dataset, batch_size=self.train_batch_size, shuffle=True)
-        self.eval_dataloader = DataLoader(eval_dataset, batch_size=self.val_batch_size)
+        self.eval_dataloader = DataLoader(eval_dataset, batch_size=self.val_batch_size, shuffle=True)
 
         # Optimizer and Scheduler
         self.optimizer = AdamW(self.model.parameters(), lr=args.learning_rate, weight_decay=4e-3)

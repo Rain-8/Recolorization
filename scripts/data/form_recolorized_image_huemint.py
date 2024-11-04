@@ -17,7 +17,7 @@ import colorsys
 
 def extract_top_colors(image_path):
     """Extracts the top colors from the image as RGB tuples."""
-    num_colors = random.randint(3, 10)  # randomly setting the length of the palette
+    num_colors = random.randint(6, 10)  # randomly setting the length of the palette
     # color_thief = ColorThief(image_path)
     colors = extract_colors(image_path, num_colors)
     colors = [x.rgb for x in colors]
