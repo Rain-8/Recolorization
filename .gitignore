@@ -2,3 +2,7 @@ datasets/
 
 # python compiled files
 **/*.pyc
+
+# large and unnecessary files
+**/*ckpts
+**/wandb

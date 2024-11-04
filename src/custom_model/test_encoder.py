@@ -1,12 +1,12 @@
 import torch
-
+from encoder import FeatureEncoder
 # Test script for the FeatureEncoder model
 
 def test_feature_encoder():
     # Define test input parameters
     batch_size = 4       # Number of images in the batch
     in_channels = 3      # RGB channels
-    height, width = 128, 128  # Dimensions of each image
+    height, width = 512, 512  # Dimensions of each image
 
     # Instantiate the FeatureEncoder model
     model = FeatureEncoder(in_channels=in_channels, num_heads=4)
