@@ -123,9 +123,9 @@ class FeatureEncoder(nn.Module):
 
         # DoubleConv layers for each encoding stage
         self.dconv_down_1 = DoubleConv(in_channels, 64)
-        self.dconv_down_2 = DoubleConv(128, 128)
-        self.dconv_down_3 = DoubleConv(256, 256)
-        self.dconv_down_4 = DoubleConv(512, 512)
+        self.dconv_down_2 = DoubleConv(64, 128)
+        self.dconv_down_3 = DoubleConv(128, 256)
+        self.dconv_down_4 = DoubleConv(256, 512)
 
         # ResNet layers for each encoding stage
         self.res1 = ResNetLayer(64, 64)
