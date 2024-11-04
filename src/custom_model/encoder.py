@@ -128,9 +128,9 @@ class FeatureEncoder(nn.Module):
         self.dconv_down_4 = DoubleConv(512, 512)
 
         # ResNet layers for each encoding stage
-        self.res1 = ResNetLayer(64, 128)
-        self.res2 = ResNetLayer(128, 256)
-        self.res3 = ResNetLayer(256, 512)
+        self.res1 = ResNetLayer(64, 64)
+        self.res2 = ResNetLayer(128, 128)
+        self.res3 = ResNetLayer(256, 256)
 
         # Self-attention layers for each encoding stage
         self.self_attn_1 = SelfAttention(128, num_heads)
