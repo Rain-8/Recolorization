@@ -97,12 +97,13 @@ class ResNetLayer(nn.Module):
         super().__init__()
         downsampling = 2 if in_channels != out_channels else 1
         self.blocks = nn.Sequential(
-            block(in_channels, out_channels, downsampling=downsampling),
+            block(in_channels, out_channels, downsampling=downsampling),  # Removed *args, **kwargs
             *[block(out_channels * block.expansion, out_channels, downsampling=1) for _ in range(n - 1)]
         )
 
     def forward(self, x):
         return self.blocks(x)
+
 
 class FeatureEncoder(nn.Module):
     def __init__(self, in_channels=3, num_heads=4):
