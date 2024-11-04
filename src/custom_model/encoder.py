@@ -117,11 +117,16 @@ class FeatureEncoder(nn.Module):
 
         return c1, c2, c3, c4
 
-# Sample test with input [4, 3, 64, 64]
 if __name__ == "__main__":
-    model = FeatureEncoder(in_channels=3, num_heads=4)
-    x = torch.randn(4, 3, 64, 64)  # Batch of 4 images, each 64x64 with 3 channels (RGB)
-    c1, c2, c3, c4 = model(x)
+    print("Starting test...")
+    try:
+        model = FeatureEncoder(in_channels=3, num_heads=4)
+        x = torch.randn(4, 3, 64, 64)  # Batch of 4 images, each 64x64 with 3 channels (RGB)
+        c1, c2, c3, c4 = model(x)
+        print("Test completed successfully.")
+    except Exception as e:
+        print("An error occurred:", e)
+
 
 
 
