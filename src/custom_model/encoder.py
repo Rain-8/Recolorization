@@ -26,37 +26,28 @@ import torch.nn.functional as F
 class SelfAttention(nn.Module):
     def __init__(self, embed_dim, num_heads):
         super(SelfAttention, self).__init__()
+        self.embed_dim = embed_dim
+        self.num_heads = num_heads
         self.multihead_attn = nn.MultiheadAttention(embed_dim, num_heads)
 
-        # Linear layers for query, key, and value projections
-        self.linear_q = nn.Linear(embed_dim, embed_dim)
-        self.linear_k = nn.Linear(embed_dim, embed_dim)
-        self.linear_v = nn.Linear(embed_dim, embed_dim)
-
     def forward(self, x):
-        # Check input dimensions and prepare for multi-head attention
-        b, c, h, w = x.shape  # (batch, channels, height, width)
+        b, c, h, w = x.shape  # (batch_size, channels, height, width)
 
-        # Ensure that the channels match the expected embedding dimension
-        if c != self.linear_q.in_features:
-            raise ValueError(f"Expected input with {self.linear_q.in_features} channels, but got {c} channels.")
+        # Ensure the input channel dimension matches the embed dimension
+        if c != self.embed_dim:
+            raise ValueError(f"Channel dimension {c} does not match embed_dim {self.embed_dim}")
 
-        # Flatten spatial dimensions and permute for attention: (sequence_length, batch_size, embedding_dim)
-        x_flat = x.view(b, c, h * w).permute(2, 0, 1)  # Shape: (h * w, batch, channels)
+        # Flatten spatial dimensions and permute for attention
+        x = x.view(b, c, h * w).permute(2, 0, 1)  # Shape: (sequence_length, batch_size, embed_dim)
 
-        # Project the input to queries, keys, and values
-        q = self.linear_q(x_flat)
-        k = self.linear_k(x_flat)
-        v = self.linear_v(x_flat)
+        # Use the same input for q, k, v directly
+        attn_output, _ = self.multihead_attn(x, x, x)
 
-        # Apply multi-head attention
-        attn_output, _ = self.multihead_attn(q, k, v)
+        # Reshape the output back to (batch_size, channels, height, width)
+        attn_output = attn_output.permute(1, 2, 0).view(b, c, h, w)  # Shape: (b, c, h, w)
 
-        # Reshape the attention output back to (batch, channels, height, width)
-        attn_output = attn_output.permute(1, 2, 0).view(b, c, h, w)
-
-        # Element-wise addition instead of concatenation
-        return x + attn_output
+        # Return element-wise addition for simplicity
+        return x.view(b, c, h, w) + attn_output
 
 
 
