@@ -133,9 +133,9 @@ class FeatureEncoder(nn.Module):
         self.res3 = ResNetLayer(256, 256)
 
         # Self-attention layers for each encoding stage
-        self.self_attn_1 = SelfAttention(128, num_heads)
-        self.self_attn_2 = SelfAttention(256, num_heads)
-        self.self_attn_3 = SelfAttention(512, num_heads)
+        self.self_attn_1 = SelfAttention(64, num_heads)
+        self.self_attn_2 = SelfAttention(128, num_heads)
+        self.self_attn_3 = SelfAttention(256, num_heads)
 
         # Pooling layer for downsampling
         self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
