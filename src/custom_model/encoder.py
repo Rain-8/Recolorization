@@ -32,19 +32,22 @@ class SelfAttention(nn.Module):
 
     def forward(self, x):
         b, c, h, w = x.shape
-        # Reshape and project feature map
+    
+        # Flatten the spatial dimensions and prepare for attention
         x_flat = x.view(b, c, h * w).permute(2, 0, 1)  # Shape: (h * w, batch, channels)
         
+        # Project the feature map into queries, keys, and values
         q = self.linear_q(x_flat)  # Query projection
         k = self.linear_k(x_flat)  # Key projection
         v = self.linear_v(x_flat)  # Value projection
-
-        # Multi-head attention
+    
+        # Apply multi-head attention
         attn_output, _ = self.multihead_attn(q, k, v)
-        attn_output = attn_output.permute(1, 2, 0).view(b, c, h, w)
+        attn_output = attn_output.permute(1, 2, 0).view(b, c, h, w)  # Reshape back to (b, c, h, w)
+    
+        # Add attention output to the original input instead of concatenating
+        return x + attn_output  # Element-wise addition instead of concatenation
 
-        # Concatenate attention output with the original feature map
-        return torch.cat([x, attn_output], dim=1)  # Concatenate along the channel dimension
 
 class ResidualBlock(nn.Module):
     def __init__(self, in_channels, out_channels, activation='relu'):
