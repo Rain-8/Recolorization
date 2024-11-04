@@ -66,11 +66,14 @@ class FeatureEncoder(nn.Module):
         self.res1 = ResidualBlock(64, 64)
         self.res2 = ResidualBlock(128, 128)
         self.res3 = ResidualBlock(256, 256)
+        self.res4 = ResidualBlock(512, 512)
+        
 
         # Self-attention layers for each encoding stage
         self.self_attn_1 = SelfAttention(64, num_heads)
         self.self_attn_2 = SelfAttention(128, num_heads)
         self.self_attn_3 = SelfAttention(256, num_heads)
+        self.self_attn_4 = SelfAttention(512, num_heads)
 
         # Pooling layer for selective downsampling
         self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2)
@@ -109,8 +112,15 @@ class FeatureEncoder(nn.Module):
         print("After Pooling 3 (c3):", c3.shape)
 
         # Encoding stage 4 (without further downsampling)
-        c4 = self.dconv_down_4(c3)
-        print("\nAfter DoubleConv 4 (Final Output c4):", c4.shape)
+       
+        x = self.dconv_down_4(c3)
+        print("\nAfter DoubleConv 4:", x.shape)
+        x = self.res4(x)
+        print("After ResNet Block 4:", x.shape)
+        x = self.self_attn_4(x)
+        print("After Self-Attention 4:", x.shape)
+        c3 = self.pool4(x)
+        print("After Pooling 4 (c3):", c4.shape)
 
         return c1, c2, c3, c4
 
