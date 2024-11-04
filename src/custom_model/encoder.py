@@ -69,10 +69,10 @@ class ResidualBlock(nn.Module):
 
 class ResNetBasicBlock(ResidualBlock):
     expansion = 1
-    def __init__(self, in_channels, out_channels, *args, **kwargs):
+    def __init__(self, in_channels, out_channels, downsampling=1, *args, **kwargs):
         super().__init__(in_channels, out_channels, *args, **kwargs)
         self.blocks = nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1, bias=False),
+            nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=downsampling, padding=1, bias=False),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True),
             nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1, bias=False),
@@ -97,8 +97,8 @@ class ResNetLayer(nn.Module):
         super().__init__()
         downsampling = 2 if in_channels != out_channels else 1
         self.blocks = nn.Sequential(
-            block(in_channels, out_channels),
-            *[block(out_channels * block.expansion, out_channels) for _ in range(n - 1)]
+            block(in_channels, out_channels, downsampling=downsampling, *args, **kwargs),
+            *[block(out_channels * block.expansion, out_channels, downsampling=1, *args, **kwargs) for _ in range(n - 1)]
         )
 
     def forward(self, x):
