@@ -144,24 +144,25 @@ class FeatureEncoder(nn.Module):
         # Encoding stage 1
         x = self.dconv_down_1(x)
         x = self.res1(x)
-        x = self.self_attn_1(x)
+        x = self.self_attn_1(x)  # Self-attention without changing channels
         c1 = self.pool(x)  # Save for use in the decoder
 
         # Encoding stage 2
         x = self.dconv_down_2(c1)
         x = self.res2(x)
-        x = self.self_attn_2(x)
+        x = self.self_attn_2(x)  # Self-attention without changing channels
         c2 = self.pool(x)
 
         # Encoding stage 3
         x = self.dconv_down_3(c2)
         x = self.res3(x)
-        x = self.self_attn_3(x)
+        x = self.self_attn_3(x)  # Self-attention without changing channels
         c3 = self.pool(x)
 
         # Encoding stage 4 (without further downsampling)
         c4 = self.dconv_down_4(c3)
 
         return c1, c2, c3, c4
+
 
 
