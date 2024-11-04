@@ -76,9 +76,9 @@ class FeatureEncoder(nn.Module):
         self.self_attn_4 = SelfAttention(512, num_heads)
 
         # Pooling layer for selective downsampling
-        self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2)
-        self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2)
-        self.pool3 = nn.MaxPool2d(kernel_size=2, stride=2)
+        self.pool1 = nn.MaxPool2d(kernel_size=2, stride=1)
+        self.pool2 = nn.MaxPool2d(kernel_size=2, stride=1)
+        self.pool3 = nn.MaxPool2d(kernel_size=2, stride=1)
 
     def forward(self, x):
         # Encoding stage 1
