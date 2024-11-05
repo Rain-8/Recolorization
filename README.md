@@ -17,4 +17,6 @@ pip install -r requirements.txt
 ```
 ```
 python model.py
+pip install streamlit
+pip install watchdog
 ```
