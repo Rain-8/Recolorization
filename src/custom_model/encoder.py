@@ -48,6 +48,8 @@ class ResidualBlock(nn.Module):
         out = self.bn2(self.conv2(out))
         out += self.shortcut(x)
         return F.relu(out)
+    
+    
 
 class ResNetLayer(nn.Module):
     def __init__(self, in_channels, out_channels, block=ResidualBlock, n=1):
