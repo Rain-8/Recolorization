@@ -15,3 +15,8 @@ conda create -n myenv python=3.12
 ```
 pip install -r requirements.txt
 ```
+```
+python model.py
+pip install streamlit
+pip install watchdog
+```
