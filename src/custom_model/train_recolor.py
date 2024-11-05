@@ -3,7 +3,7 @@ from tqdm import tqdm
 from datetime import datetime
 
 import torch
-from torch.optim import Adam
+from torch.optim import AdamW
 from torch.utils.data import DataLoader
 
 from accelerate import Accelerator
@@ -36,7 +36,7 @@ class RecolorizeTrainer:
         self.eval_dataloader = DataLoader(eval_dataset, batch_size=self.val_batch_size)
 
         # Optimizer and Scheduler
-        self.optimizer = Adam(self.model.parameters(), lr=args.learning_rate)
+        self.optimizer = AdamW(self.model.parameters(), lr=args.learning_rate, weight_decay=4e-3)
         self.num_epochs = args.num_epochs
         self.num_training_steps = args.num_epochs * len(self.train_dataloader)
         

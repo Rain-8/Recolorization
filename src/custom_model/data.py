@@ -61,11 +61,11 @@ class RecolorizeDataset(Dataset):
         Create a 4x60x4 palette image from a palette list. Each color occupies a 4x4 block.
         The alpha channel is set to 1 for existing colors and 0 for non-existing slots.
         """
-        palette_image = np.zeros((4, 60, 4), dtype=np.float32)  # Initialize with zeros (RGBA)
+        palette_image = np.zeros((4, 24, 4), dtype=np.float32)  # Initialize with zeros (RGBA)
 
         for i, color in enumerate(palette):
-            row = (i // 15) * 4  # Each row contains 15 colors, starting at row 0 or 4
-            col = (i % 15) * 4   # Each color occupies a 4x4 block
+            row = (i // 6) * 4  # Each row contains 6 colors, starting at row 0 or 4
+            col = (i % 6) * 4   # Each color occupies a 4x4 block
             palette_image[row:row+4, col:col+4, :3] = np.array(color, dtype=np.float32) / 255  # RGB channels
             palette_image[row:row+4, col:col+4, 3] = 1     # Alpha channel set to 1
 
@@ -151,7 +151,7 @@ def visualize_recolor_data(src_image, tgt_image, illu, src_palette, tgt_palette,
 
 if __name__=="__main__":
     # Path to the JSON file
-    dataset_path = "../../datasets/processed_data_v2/recolorization_data.json"  # Update with your path
+    dataset_path = "../../datasets/processed_palettenet_data_sample/test/recolorization_data.json"  # Update with your path
     data = get_data(dataset_path)
 
     # Get a sample from the dataset and visualize
