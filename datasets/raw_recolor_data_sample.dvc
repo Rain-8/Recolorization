@@ -1,0 +1,6 @@
+outs:
+- md5: 2131b76db2c5729cc5ef7001ea2f8ae6.dir
+  size: 67980785
+  nfiles: 207
+  hash: md5
+  path: raw_recolor_data_sample
