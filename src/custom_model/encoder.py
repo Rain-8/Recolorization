@@ -66,7 +66,7 @@ class FeatureEncoder(nn.Module):
         self.res4 = ResidualBlock(512, 512)
 
         # Self-attention layers
-        self.self_attn_1 = SelfAttention(64, num_heads)
+        self.self_attn_1 = SelfAttention(64, num_heads)#
         self.self_attn_2 = SelfAttention(128, num_heads)
         self.self_attn_3 = SelfAttention(256, num_heads)
         self.self_attn_4 = SelfAttention(512, num_heads)
