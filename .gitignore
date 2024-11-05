@@ -1,4 +1,5 @@
-datasets/
+datasets/IMAGE_DATASET_FOR_COLORTHIEF
+datasets/processed_palettenet_data_sample
 
 # python compiled files
 **/*.pyc
