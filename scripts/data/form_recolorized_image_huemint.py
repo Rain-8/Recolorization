@@ -13,11 +13,12 @@ from get_contrast_matrix import contrast_matrix_flat_list
 from get_huemint_response import get_huemint_response
 from Pylette import extract_colors
 import colorsys
+import tqdm
 
 
 def extract_top_colors(image_path):
     """Extracts the top colors from the image as RGB tuples."""
-    num_colors = random.randint(6, 10)  # randomly setting the length of the palette
+    num_colors = 6  # randomly setting the length of the palette
     # color_thief = ColorThief(image_path)
     colors = extract_colors(image_path, num_colors)
     colors = [x.rgb for x in colors]
@@ -120,12 +121,12 @@ def process_images(src_dir, tgt_dir):
     json_data = {}
     image_paths = sorted(glob.glob(f"{src_dir}/*"))
 
-    for image_path in image_paths[:10]:
+    for image_path in tqdm.tqdm(image_paths):
         try:
             image_name = os.path.basename(image_path).split(".")[0]
             original_image_path = os.path.join(tgt_dir, f"src_images/{image_name}.png")
 
-            print(f"Processing {image_name}...")
+            # print(f"Processing {image_name}...")
 
             # Copy original image to target directory
             Image.open(image_path).save(original_image_path)
@@ -135,7 +136,7 @@ def process_images(src_dir, tgt_dir):
             adjacency_matrix = contrast_matrix_flat_list(top_colors)
             response = get_huemint_response(adjacency_matrix, len(top_colors))
             if response is not None:
-                for idx, result in enumerate(response["results"][:3]):
+                for idx, result in enumerate(response["results"][:140]):
                     tgt_palette = [hex_to_rgb(color) for color in result["palette"]]
                     # Step 3: Recolorize the image using the new palette
                     recolored_image_name = f"tgt_images/recolor_{image_name}_palette_{idx}.png"
@@ -157,7 +158,7 @@ def process_images(src_dir, tgt_dir):
                         "tgt_image_path": recolored_image_path
                     }
 
-                    print(f"Saved recolorized image with palette {idx} to {recolored_image_path}")
+                    # print(f"Saved recolorized image with palette {idx} to {recolored_image_path}")
         except Exception as e:
             print("Error: ", e)
 
@@ -173,7 +174,8 @@ def process_images(src_dir, tgt_dir):
 
 # Main script
 if __name__ == "__main__":
-    src_dir = "../../datasets/sample/"  # Directory containing source images
-    tgt_dir = "../../datasets/processed_data_v5/"  # Directory to save recolorized images and palettes
+    src_dir = "../../datasets/raw_recolor_data_sample/"  # Directory containing source images
+    tgt_dir = "../../datasets/processed_palettenet_data_sample/"  # Directory to save recolorized images and palettes
 
-    process_images(src_dir, tgt_dir)
+    for split in ["train", "val", "test"]:
+        process_images(f"{src_dir}{split}", f"{tgt_dir}{split}")

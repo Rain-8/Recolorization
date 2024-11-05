@@ -7,7 +7,7 @@ def get_huemint_response(adjacency_matrix, num_colors):
         "mode": "transformer",  # transformer, diffusion, or random
         "num_colors": num_colors,        # max 12, min 2
         "temperature": "1.8",   # max 2.4, min 0
-        "num_results": 3,      # max 50 for transformer, 5 for diffusion
+        "num_results": 140,      # max 50 for transformer, 5 for diffusion
         "adjacency": adjacency_matrix
     }   
     url = "https://api.huemint.com/color"
