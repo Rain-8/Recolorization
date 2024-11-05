@@ -129,7 +129,7 @@ def process_images(src_dir, tgt_dir):
             # print(f"Processing {image_name}...")
 
             # Copy original image to target directory
-            Image.open(image_path).save(original_image_path)
+            Image.open(image_path).convert("RGB").save(original_image_path)
 
             # Step 1: Extract top colors from the image
             top_colors = extract_top_colors(image_path)
@@ -144,7 +144,7 @@ def process_images(src_dir, tgt_dir):
                     
                     try:
                         recolorized_image = replace_colors_fast(image_path, top_colors, tgt_palette)
-                        recolorized_image.save(recolored_image_path)
+                        recolorized_image.convert("RGB").save(recolored_image_path)
                     except Exception as recolor_error:
                         print("Recoloring failed:", recolor_error)
                         continue
