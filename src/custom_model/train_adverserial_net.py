@@ -1,26 +1,26 @@
 import os
+from turtle import forward
 from tqdm import tqdm
 from datetime import datetime
 
 import torch
-import torch.nn as nn 
-from torch.optim import AdamW
+import torch.nn as nn
+from torch.optim import Adam
 from torch.utils.data import DataLoader
 
 from accelerate import Accelerator
 import wandb
 
-import sys
-sys.path.append("../")
-from common_utils.train_utils.log_to_wandb import log_images_and_metrics
 
-class RecolorizeTrainer:
-    def __init__(self, model, train_dataset, eval_dataset, args):
+class AdversarialTrainer:
+    def __init__(self, encoder, decoder, discriminator, train_dataset, eval_dataset, args):
         # Initialize Accelerator
         self.accelerator = Accelerator()
 
         # Prepare model, optimizer, and dataloaders with accelerator
-        self.model = model
+        self.encoder = encoder
+        self.decoder = decoder
+        self.discriminator = discriminator
         self.train_dataset = train_dataset
         self.eval_dataset = eval_dataset
         self.train_batch_size = args.train_batch_size
@@ -32,7 +32,7 @@ class RecolorizeTrainer:
 
         self.run_name = args.run_name
         if args.run_name is None:
-            self.run_name = f"recolorization_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+            self.run_name = f"Adversarial_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
         wandb.init(project=args.project_name, name=self.run_name)
 
@@ -41,22 +41,30 @@ class RecolorizeTrainer:
         self.eval_dataloader = DataLoader(eval_dataset, batch_size=self.val_batch_size)
 
         # Optimizer and Scheduler
-        self.optimizer = AdamW(self.model.parameters(), lr=args.learning_rate, weight_decay=4e-3)
+        self.optimizerRD = Adam(self.decoder.parameters(), lr=0.0002, betas=(0.5, 0.999))
+        self.optimizerD = Adam(self.discriminator.parameters(), lr=0.0002, betas=(0.5, 0.999))
         self.num_epochs = args.num_epochs
         self.num_training_steps = args.num_epochs * len(self.train_dataloader)
-        self.criterion = nn.MSELoss()
+        self.criterion_MSE = nn.MSELoss()
+        self.criterion_BSE = nn.BCELoss()
+        
+        for param in self.encoder.parameters(): 
+            param.requires_grad = False
+
         # Prepare everything with Accelerator
         (
-            self.model,
-            self.optimizer,
+            self.encoder,
+            self.decoder,
+            self.discriminator,
+            self.optimizerRD,
+            self.optimizerD,
             self.train_dataloader,
             self.eval_dataloader,
         ) = self.accelerator.prepare(
-            self.model, self.optimizer, self.train_dataloader, self.eval_dataloader
+            self.encoder, self.decoder, self.discriminator, self.optimizerRD, self.optimizerD, self.train_dataloader, self.eval_dataloader
         )
 
     def train(self):
-        # Training loop
         self.model.train()
         for epoch in range(self.num_epochs):
             print(f"Epoch {epoch + 1}/{self.num_epochs}")
@@ -65,7 +73,10 @@ class RecolorizeTrainer:
             for batch in progress_bar:
                 # Forward pass
                 src_image, tgt_image, illu, src_palette, tgt_palette = batch
-                outputs = self.model(src_image, tgt_palette, illu)
+                tgt_palette = tgt_palette.flatten()
+                c1, c2, c3, c4 = self.encoder(src_image)
+                outputs = self.decoder(c1, c2, c3, c4, tgt_palette)
+                
                 self.optimizer.zero_grad()
                 loss = self.criterion(outputs, tgt_image)
                 self.accelerator.backward(loss)
@@ -86,39 +97,4 @@ class RecolorizeTrainer:
             if epoch % self.validation_interval == 0:
                 self.evaluate()
 
-    def evaluate(self, epoch):
-        # Evaluation loop
-        self.model.eval()
-        total_loss = 0
-        num_batches = len(self.eval_dataloader)
-        with torch.no_grad():
-            for batch_idx, batch in enumerate(self.eval_dataloader):
-                src_image, tgt_image, illu, src_palette, tgt_palette = batch
-                outputs = self.model(src_image, tgt_palette, illu)
-                val_loss = self.criterion(outputs, tgt_image)
-                total_loss += val_loss.item()
-                if batch_idx == 0:
-                    current_step = epoch + 1
-                    log_images_and_metrics(
-                        src_image, 
-                        outputs, 
-                        tgt_palette,
-                        current_step
-                    )
-        
-        avg_loss = total_loss / num_batches
-        print(f"Validation Loss: {avg_loss}")
-        wandb.log({"epoch_val_loss": avg_loss}, step=epoch+1)
 
-    def save_checkpoint(self, epoch):
-        """Save a checkpoint with the current epoch number."""
-        checkpoint = {
-            "epoch": epoch,
-            "model_state_dict": self.model.state_dict(),
-            "optimizer_state_dict": self.optimizer.state_dict(),
-            "run_name": self.run_name,
-        }
-        os.makedirs(self.checkpoint_dir, exist_ok=True)
-        checkpoint_path = os.path.join(self.checkpoint_dir, f"checkpoint_epoch_{epoch}.pt")
-        torch.save(checkpoint, checkpoint_path)
-        print(f"Checkpoint saved: {checkpoint_path}")
