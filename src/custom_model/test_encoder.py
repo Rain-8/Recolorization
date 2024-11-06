@@ -1,5 +1,5 @@
 import torch
-from encoder import FeatureEncoder
+from encoder_v2 import FeatureEncoder
 
 def test_feature_encoder():
     # Define smaller test input parameters to reduce memory load
