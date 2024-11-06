@@ -8,10 +8,10 @@ class DoubleConv(nn.Module):
         self.double_conv = nn.Sequential(
             nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1, bias=False),
             nn.InstanceNorm2d(out_channels),
-            nn.LeakyReLU(inplace=True),
+            nn.LeakyReLU(negative_slope=0.02, inplace=True),
             nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(out_channels),
-            nn.LeakyReLU(inplace=True)
+            nn.LeakyReLU(negative_slope=0.02, inplace=True)
         )
 
     def forward(self, x):
@@ -110,6 +110,6 @@ class RecoloringDecoder(nn.Module):
         illu = illu.view(illu.size(0), 1, illu.size(1), illu.size(2))
         x = torch.cat((x, illu), dim=1)
         x = self.conv_last(x)
-
+        x = torch.tanh(x)
         return x
         
