@@ -64,7 +64,7 @@ class RecolorizeTrainer:
             for batch in progress_bar:
                 # Forward pass
                 src_image, tgt_image, illu, src_palette, tgt_palette = batch
-                outputs = self.model(src_image, tgt_image, illu, tgt_palette)
+                outputs = self.model(src_image, tgt_palette, illu)
                 self.optimizer.zero_grad()
                 loss = self.criterion(outputs, tgt_image)
                 self.accelerator.backward(loss)
