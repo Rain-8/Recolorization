@@ -1,5 +1,5 @@
 import torch.nn as nn
-from encoder import FeatureEncoder
+from encoder_v2 import FeatureEncoder
 from decoder import RecoloringDecoder
 
 
