@@ -81,12 +81,12 @@ def get_data(dataset_path):
     data = RecolorizeDataset(json_path=dataset_path, transform=transform)
     return data
 
+from skimage.color import rgb2lab, lab2rgb
 
 def visualize_recolor_data(src_image, tgt_image, illu, src_palette, tgt_palette, figsize=(20, 10)):
     """
-    Visualize all components of the recoloring dataset in a single figure.
+    Visualize all components of the recoloring dataset in a single figure, with LAB conversion and luminance adjustment.
     """
-    # Convert tensors to numpy arrays for visualization
     def tensor_to_image(tensor):
         if isinstance(tensor, torch.Tensor):
             if tensor.dim() == 3:
@@ -97,17 +97,28 @@ def visualize_recolor_data(src_image, tgt_image, illu, src_palette, tgt_palette,
     src_image_np = np.clip(tensor_to_image(src_image), 0, 1)
     tgt_image_np = np.clip(tensor_to_image(tgt_image), 0, 1)
     illu_np = tensor_to_image(illu)
-    src_palette_np = np.clip(tensor_to_image(src_palette)[:, :, :3], 0, 255)  # Only RGB channels
-    tgt_palette_np = np.clip(tensor_to_image(tgt_palette)[:, :, :3], 0, 255)  # Only RGB channels
+    src_palette_np = np.clip(tensor_to_image(src_palette)[:, :, :3], 0, 255)
+    tgt_palette_np = np.clip(tensor_to_image(tgt_palette)[:, :, :3], 0, 255)
+
+    # Convert src and tgt images to LAB
+    src_image_lab = rgb2lab(src_image_np)
+    tgt_image_lab = rgb2lab(tgt_image_np)
+
+    # Replace the L (luminance) channel in tgt_image_lab with that of src_image_lab
+    tgt_image_lab[:, :, 0] = src_image_lab[:, :, 0]
+
+    # Convert the modified LAB target image back to RGB
+    tgt_image_luminance_fixed = np.clip(lab2rgb(tgt_image_lab), 0, 1)
+
     # Create figure with GridSpec
     fig = plt.figure(figsize=figsize)
     gs = GridSpec(2, 3, figure=fig)
-    
+
     # Main images (larger)
     ax1 = fig.add_subplot(gs[0, 0])
     ax2 = fig.add_subplot(gs[0, 1])
     ax3 = fig.add_subplot(gs[0, 2])
-    
+
     # Palettes and illumination (smaller)
     ax4 = fig.add_subplot(gs[1, 0])
     ax5 = fig.add_subplot(gs[1, 1])
@@ -118,23 +129,23 @@ def visualize_recolor_data(src_image, tgt_image, illu, src_palette, tgt_palette,
     ax1.set_title("Source Image", fontsize=12, pad=10)
     ax1.axis("off")
 
-    ax2.imshow(tgt_image_np)
-    ax2.set_title("Target Image", fontsize=12, pad=10)
+    ax2.imshow(tgt_image_luminance_fixed)
+    ax2.set_title("Target Image (Luminance Matched)", fontsize=12, pad=10)
     ax2.axis("off")
 
-    # Plot difference map
-    diff = np.abs(src_image_np - tgt_image_np).mean(axis=-1)
+    # Plot difference map in LAB
+    diff = np.abs(src_image_lab - tgt_image_lab).mean(axis=-1)
     im3 = ax3.imshow(diff, cmap='hot')
-    ax3.set_title("Color Difference Map", fontsize=12, pad=10)
+    ax3.set_title("LAB Color Difference Map", fontsize=12, pad=10)
     ax3.axis("off")
     plt.colorbar(im3, ax=ax3, fraction=0.046, pad=0.04)
 
     # Plot palettes
-    ax4.imshow(src_palette_np)
+    ax4.imshow(src_palette_np / 255.0)
     ax4.set_title("Source Palette", fontsize=12, pad=10)
     ax4.axis("off")
 
-    ax5.imshow(tgt_palette_np)
+    ax5.imshow(tgt_palette_np / 255.0)
     ax5.set_title("Target Palette", fontsize=12, pad=10)
     ax5.axis("off")
 
@@ -144,9 +155,9 @@ def visualize_recolor_data(src_image, tgt_image, illu, src_palette, tgt_palette,
     ax6.axis("off")
     plt.colorbar(im6, ax=ax6, fraction=0.046, pad=0.04)
 
-    # Adjust layout
     plt.tight_layout()
     return fig
+
 
 
 if __name__=="__main__":
