@@ -1,4 +1,5 @@
 import json
+import random
 import cv2
 import numpy as np
 from skimage.color import rgb2lab
@@ -24,12 +25,14 @@ def get_illuminance(img):
 
 
 class RecolorizeDataset(Dataset):
-    def __init__(self, json_path, transform=None):
+    def __init__(self, json_path, transform=None, sample=None):
         super().__init__()
         self.transform = transform
         # Load the JSON data
         with open(json_path, 'r') as f:
             self.data = json.load(f)
+        if sample is not None:
+            self.data = random.sample(self.data, k=sample)
 
     def __len__(self):
         return len(self.data)
@@ -60,13 +63,13 @@ class RecolorizeDataset(Dataset):
         return src_image, tgt_image, illu, src_palette, tgt_palette
     
 
-def get_data(dataset_path):
+def get_data(dataset_path, sample=None):
     transform = transforms.Compose([
         transforms.ToPILImage(),
         transforms.Resize((256, 256)),
         transforms.ToTensor(),
     ])
-    data = RecolorizeDataset(json_path=dataset_path, transform=transform)
+    data = RecolorizeDataset(json_path=dataset_path, transform=transform, sample=sample)
     return data
 
 
