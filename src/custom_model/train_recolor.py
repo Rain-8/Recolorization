@@ -12,7 +12,7 @@ import wandb
 
 import sys
 sys.path.append("../")
-from common_utils.train_utils.log_to_wandb import log_images_and_metrics
+from common_utils.train_utils.log_to_wandb import log_images_and_metrics_custom
 
 class RecolorizeTrainer:
     def __init__(self, model, train_dataset, eval_dataset, args):
@@ -99,7 +99,7 @@ class RecolorizeTrainer:
                 total_loss += val_loss.item()
                 if batch_idx == 0:
                     current_step = epoch + 1
-                    log_images_and_metrics(
+                    log_images_and_metrics_custom(
                         src_image, 
                         outputs, 
                         tgt_palette,
