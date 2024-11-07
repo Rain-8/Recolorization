@@ -1,6 +1,7 @@
 import json
 import cv2
 import numpy as np
+import random
 from skimage.color import rgb2lab
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
@@ -18,8 +19,7 @@ def get_illuminance(img):
     img = img.permute(1, 2, 0)  # (h, w, channel) 
     img = img.numpy()
     img = img.astype(np.float32) / 255.0
-    img_LAB = rgb2lab(img)
-    img_L = img_LAB[:, :, 0]  # luminance (h, w)
+    img_L = img[:, :, 0]  # luminance (h, w)
     return torch.from_numpy(img_L)
 
 
@@ -55,8 +55,8 @@ class RecolorizeDataset(Dataset):
             tgt_image = self.transform(tgt_image)
     
         # Convert images to LAB color space
-        src_image_lab = rgb2lab(src_image.permute(1, 2, 0).numpy())  # Convert to HxWxC for skimage
-        tgt_image_lab = rgb2lab(tgt_image.permute(1, 2, 0).numpy())
+        src_image_lab = rgb2lab(src_image.permute(1, 2, 0).numpy()/255)  # Convert to HxWxC for skimage
+        tgt_image_lab = rgb2lab(tgt_image.permute(1, 2, 0).numpy()/255)
     
         # Extract the L (luminance) channel for illuminance from source image in LAB
         illu = torch.from_numpy(src_image_lab[:, :, 0]).float()  # L channel only, as a tensor
@@ -107,7 +107,6 @@ class RecolorizeDataset(Dataset):
         data = RecolorizeDataset(json_path=dataset_path, transform=transform, sample=sample)
         return data
     
-    from skimage.color import rgb2lab, lab2rgb
     
 def visualize_recolor_data(src_image, tgt_image, illu, src_palette, tgt_palette, figsize=(20, 10)):
     """
@@ -121,19 +120,26 @@ def visualize_recolor_data(src_image, tgt_image, illu, src_palette, tgt_palette,
             return tensor.numpy()
         return tensor
 
-    src_image_lab = np.clip(tensor_to_image(src_image), 0, 1)
-    tgt_image_lab = np.clip(tensor_to_image(tgt_image), 0, 1)
+    src_image_lab = np.clip(tensor_to_image(src_image), 0, 100)
+    tgt_image_lab = np.clip(tensor_to_image(tgt_image), 0, 100)
     illu_np = tensor_to_image(illu)
+    src_palette[0] *= 100
+    src_palette[1] = src_palette[1]* 255 - 128
+    src_palette[2] = src_palette[2]* 255 - 128
+
+    tgt_palette[0] *= 100
+    tgt_palette[1] = tgt_palette[1]* 255 - 128
+    tgt_palette[2] = tgt_palette[2]* 255 - 128
+
     src_palette_lab = np.clip(tensor_to_image(src_palette)[:, :, :3], 0, 100)  # LAB values for L channel range [0, 100]
     tgt_palette_lab = np.clip(tensor_to_image(tgt_palette)[:, :, :3], 0, 100)
 
     # Replace the L (luminance) channel in tgt_image_lab with that of src_image_lab
-    tgt_image_luminance_fixed = tgt_image_lab.copy()
-    tgt_image_luminance_fixed[:, :, 0] = src_image_lab[:, :, 0]
+    
 
     # Convert LAB images and palettes to RGB for display
-    src_image_rgb = np.clip(lab2rgb(src_image_lab), 0, 1)
-    tgt_image_luminance_fixed_rgb = np.clip(lab2rgb(tgt_image_luminance_fixed), 0, 1)
+    src_image_rgb = np.clip(lab2rgb(src_image_lab)*255, 0, 1)
+    tgt_image_rgb = np.clip(lab2rgb(tgt_image_lab)*255, 0, 1)
     src_palette_rgb = np.clip(lab2rgb(src_palette_lab), 0, 1)
     tgt_palette_rgb = np.clip(lab2rgb(tgt_palette_lab), 0, 1)
 
@@ -156,12 +162,12 @@ def visualize_recolor_data(src_image, tgt_image, illu, src_palette, tgt_palette,
     ax1.set_title("Source Image", fontsize=12, pad=10)
     ax1.axis("off")
 
-    ax2.imshow(tgt_image_luminance_fixed_rgb)
+    ax2.imshow(tgt_image_rgb)
     ax2.set_title("Target Image (Luminance Matched)", fontsize=12, pad=10)
     ax2.axis("off")
 
     # Plot difference map in LAB
-    diff = np.abs(src_image_lab - tgt_image_luminance_fixed).mean(axis=-1)
+    diff = np.abs(src_image_lab - tgt_image_lab).mean(axis=-1)
     im3 = ax3.imshow(diff, cmap='hot')
     ax3.set_title("LAB Color Difference Map", fontsize=12, pad=10)
     ax3.axis("off")
@@ -201,6 +207,6 @@ if __name__=="__main__":
     data = get_data(dataset_path)
 
     # Get a sample from the dataset and visualize
-    src_image, tgt_image, illu, src_palette, tgt_palette = data[5]
+    src_image, tgt_image, illu, src_palette, tgt_palette = data[9]
     fig = visualize_recolor_data(src_image, tgt_image, illu, src_palette, tgt_palette)
     plt.show()
