@@ -1,5 +1,5 @@
 [core]
-    autostage = true
     remote = myremote
+    autostage = true
 ['remote "myremote"']
     url = /tmp/dvcstore

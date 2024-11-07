@@ -1,6 +1,0 @@
-outs:
-- md5: 9f54185628c339c91d8731bf066308fb.dir
-  size: 4707447632
-  nfiles: 12443
-  hash: md5
-  path: processed_palettenet_data_sample
