@@ -78,7 +78,7 @@ class RecolorizeDataset(Dataset):
         Create a 4x24x4 palette image from a palette list, with colors in LAB format. 
         Each color occupies a 4x4 block. The alpha channel is set to 1 for existing colors and 0 for non-existing slots.
         """
-        palette_image = np.zeros((4, 24, 4), dtype=np.float32)  # Initialize with zeros (RGBA)
+        palette_image = np.zeros((4, 24, 3), dtype=np.float32)  # Initialize with zeros (RGBA)
     
         for i, color in enumerate(palette):
             row = (i // 6) * 4  # Each row contains 6 colors, starting at row 0 or 4
@@ -92,7 +92,7 @@ class RecolorizeDataset(Dataset):
     
             # Place LAB values in the RGB channels of the palette image
             palette_image[row:row+4, col:col+4, :3] = color_lab  # LAB channels
-            palette_image[row:row+4, col:col+4, 3] = 1           # Alpha channel set to 1
+            # palette_image[row:row+4, col:col+4, 3] = 1           # Alpha channel set to 1
     
         # Convert to torch tensor and reorder to (channels, height, width)
         return torch.from_numpy(palette_image).permute(2, 0, 1)  # Shape (4, 4, 24)

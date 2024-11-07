@@ -11,6 +11,7 @@ def parse_args():
     parser.add_argument("--val_batch_size", type=int, default=8, help="Batch size for evaluation")
     parser.add_argument("--learning_rate", type=float, default=5e-5, help="Learning rate")
     parser.add_argument("--num_epochs", type=int, default=3, help="Number of training epochs")
+    parser.add_argument("--sample", type=int, default=None, help="Data samples")
 
     # Logging and validation intervals
     parser.add_argument("--logging_interval", type=int, default=1, help="Interval (in epochs) for logging training loss to WandB")

@@ -4,7 +4,7 @@ from datetime import datetime
 
 import torch
 import torch.nn as nn 
-from torch.optim import AdamW
+from torch.optim import AdamW, Adam
 from torch.utils.data import DataLoader
 
 from accelerate import Accelerator
@@ -41,7 +41,7 @@ class RecolorizeTrainer:
         self.eval_dataloader = DataLoader(eval_dataset, batch_size=self.val_batch_size)
 
         # Optimizer and Scheduler
-        self.optimizer = AdamW(self.model.parameters(), lr=args.learning_rate, weight_decay=4e-3)
+        self.optimizer = Adam(self.model.parameters(), lr=args.learning_rate)
         self.num_epochs = args.num_epochs
         self.num_training_steps = args.num_epochs * len(self.train_dataloader)
         self.criterion = nn.MSELoss()
@@ -66,12 +66,12 @@ class RecolorizeTrainer:
                 # Forward pass
                 src_image, tgt_image, illu, src_palette, tgt_palette = batch
                 outputs = self.model(src_image, tgt_palette, illu)
-                self.optimizer.zero_grad()
                 loss = self.criterion(outputs, tgt_image)
                 self.accelerator.backward(loss)
 
                 # Optimization step
                 self.optimizer.step()
+                self.optimizer.zero_grad()
                 total_loss += loss.item()
                 progress_bar.set_postfix({"loss": loss.item()})
 
@@ -84,7 +84,7 @@ class RecolorizeTrainer:
 
             # Evaluate at the end of each epoch
             if epoch % self.validation_interval == 0:
-                self.evaluate()
+                self.evaluate(epoch)
 
     def evaluate(self, epoch):
         # Evaluation loop
@@ -100,7 +100,7 @@ class RecolorizeTrainer:
                 if batch_idx == 0:
                     current_step = epoch + 1
                     log_images_and_metrics_custom(
-                        src_image, 
+                        tgt_image, 
                         outputs, 
                         tgt_palette,
                         current_step

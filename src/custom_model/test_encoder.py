@@ -1,5 +1,5 @@
 import torch
-from encoder_v2 import FeatureEncoder
+from encoder_v3 import FeatureEncoder
 
 def test_feature_encoder():
     # Define smaller test input parameters to reduce memory load
@@ -8,7 +8,7 @@ def test_feature_encoder():
     height, width = 64, 64  # Reduced dimensions for each image
 
     # Instantiate the FeatureEncoder model
-    model = FeatureEncoder(in_channels=in_channels, num_heads=4)
+    model = FeatureEncoder()
 
     # Generate synthetic test data (batch of RGB images)
     x = torch.randn(batch_size, in_channels, height, width)  # Shape: (batch_size, in_channels, height, width)

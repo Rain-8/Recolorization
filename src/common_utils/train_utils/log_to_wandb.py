@@ -49,6 +49,14 @@ def log_images_and_metrics(src_image, outputs, tgt_palette, step, num_samples=4)
     }, step=step)
 
 
+def tensor_to_image(tensor):
+    if isinstance(tensor, torch.Tensor):
+        if tensor.dim() == 3:
+            return tensor.permute(1, 2, 0).numpy()
+        return tensor.numpy()
+    return tensor
+
+
 def log_images_and_metrics_custom(src_image, outputs, tgt_palette, step, num_samples=4):
     """
     Log images and metrics to Weights & Biases.
@@ -68,28 +76,30 @@ def log_images_and_metrics_custom(src_image, outputs, tgt_palette, step, num_sam
     gen_imgs = outputs[:num_samples].detach().cpu()
     palettes = tgt_palette[:num_samples].detach().cpu()
     
+    src_image_labs = [np.clip(tensor_to_image(img), 0, 100) for img in src_imgs]
+    tgt_image_labs = [np.clip(tensor_to_image(img), 0, 100) for img in gen_imgs]
+
     # Convert LAB images to RGB for logging
-    src_imgs_rgb = [np.clip(lab2rgb(img.numpy().transpose(1, 2, 0)) * 255, 0, 255).astype(np.uint8) for img in src_imgs]
-    gen_imgs_rgb = [np.clip(lab2rgb(img.numpy().transpose(1, 2, 0)) * 255, 0, 255).astype(np.uint8) for img in gen_imgs]
+    src_imgs_rgb = [np.clip(lab2rgb(img)*255, 0, 1) for img in src_image_labs]
+    gen_imgs_rgb = [np.clip(lab2rgb(img)*255, 0, 1) for img in tgt_image_labs]
 
     # Convert LAB palettes to RGB for logging
     palettes_rgb = []
     for i in range(num_samples):
-        # Convert each palette from LAB to RGB with normalization reversal
-        palette_lab = palettes[i].reshape(-1, 3).numpy()  # Reshape to (num_colors, 3)
-        palette_lab[:, 0] *= 100.0  # L* back to [0, 100]
-        palette_lab[:, 1] = palette_lab[:, 1] * 255 - 128  # a* back to [-128, 127]
-        palette_lab[:, 2] = palette_lab[:, 2] * 255 - 128  # b* back to [-128, 127]
+        palettes[i][0] *= 100
+        palettes[i][1] = palettes[i][1]* 255 - 128
+        palettes[i][2] = palettes[i][2]* 255 - 128
+
+        tgt_palette_lab = tensor_to_image(palettes[i])
         
-        # Convert LAB to RGB
-        palette_rgb = lab2rgb(palette_lab.reshape(1, -1, 3)).squeeze() * 255
+        palette_rgb = np.clip(lab2rgb(tgt_palette_lab), 0, 1)
         palettes_rgb.append(palette_rgb.astype(np.uint8))
 
     # Create wandb images
     wandb_images = {
         "validation/source_images": [wandb.Image(img, caption=f"Source Image {i}") for i, img in enumerate(src_imgs_rgb)],
         "validation/generated_images": [wandb.Image(img, caption=f"Generated Image {i}") for i, img in enumerate(gen_imgs_rgb)],
-        "validation/target_palettes": [wandb.Image(palette.reshape(-1, 1, 3), caption=f"Target Palette {i}") for i, palette in enumerate(palettes_rgb)],
+        "validation/target_palettes": [wandb.Image(palette, caption=f"Target Palette {i}") for i, palette in enumerate(palettes_rgb)],
     }
     
     # Log to wandb
