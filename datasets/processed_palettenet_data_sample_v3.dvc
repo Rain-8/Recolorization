@@ -3,4 +3,4 @@ outs:
   size: 593688125
   nfiles: 4049
   hash: md5
-  path: processed_palettenet_data_sample_v2
+  path: processed_palettenet_data_sample_v3

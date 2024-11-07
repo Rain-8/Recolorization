@@ -1,0 +1,6 @@
+outs:
+- md5: e5343719d38152c9643c9496e21cc797.dir
+  size: 3803462034
+  nfiles: 10147
+  hash: md5
+  path: processed_palettenet_data
