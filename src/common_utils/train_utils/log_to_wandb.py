@@ -77,22 +77,17 @@ def log_images_and_metrics_custom(src_image, outputs, tgt_palette, step, num_sam
     palettes = tgt_palette[:num_samples].detach().cpu()
     
     src_image_labs = [np.clip(tensor_to_image(img), 0, 100) for img in src_imgs]
-    tgt_image_labs = [np.clip(tensor_to_image(img), 0, 100) for img in gen_imgs]
+    gen_image_labs = [np.clip(tensor_to_image(img), 0, 100) for img in gen_imgs]
 
     # Convert LAB images to RGB for logging
     src_imgs_rgb = [np.clip(lab2rgb(img)*255, 0, 1) for img in src_image_labs]
-    gen_imgs_rgb = [np.clip(lab2rgb(img)*255, 0, 1) for img in tgt_image_labs]
+    gen_imgs_rgb = [np.clip(lab2rgb(img)*255, 0, 1) for img in gen_image_labs]
 
     # Convert LAB palettes to RGB for logging
     palettes_rgb = []
     for i in range(num_samples):
-        palettes[i][0] *= 100
-        palettes[i][1] = palettes[i][1]* 255 - 128
-        palettes[i][2] = palettes[i][2]* 255 - 128
-
         tgt_palette_lab = tensor_to_image(palettes[i])
-        
-        palette_rgb = np.clip(lab2rgb(tgt_palette_lab), 0, 1)
+        palette_rgb = np.clip(lab2rgb(tgt_palette_lab) * 255, 0, 1)
         palettes_rgb.append(palette_rgb.astype(np.uint8))
 
     # Create wandb images

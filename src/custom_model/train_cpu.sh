@@ -1,3 +1,3 @@
 accelerate launch --config_file "../common_utils/configs/accelerate_cpu_config.yaml" run_recolor_training.py --train_batch_size 1 --val_batch_size 1 --learning_rate 0.0002 \
- --num_epochs 1000 --validation_interval 2 --train_data_path "../../datasets/processed_palettenet_data_sample/val/recolorization_data.json" --val_data_path "../../datasets/processed_palettenet_data_sample/val/recolorization_data.json" 
+ --num_epochs 1000 --validation_interval 1 --checkpointing_interval 10 --train_data_path "../../datasets/processed_palettenet_data_sample_v4/val.json" --val_data_path "../../datasets/processed_palettenet_data_sample_v4/test.json" 
  
