@@ -120,28 +120,31 @@ def visualize_recolor_data(src_image, tgt_image, illu, src_palette, tgt_palette,
             return tensor.numpy()
         return tensor
 
-    src_image_lab = np.clip(tensor_to_image(src_image), 0, 100)
-    tgt_image_lab = np.clip(tensor_to_image(tgt_image), 0, 100)
-    illu_np = tensor_to_image(illu)
-    src_palette[0] *= 100
-    src_palette[1] = src_palette[1]* 255 - 128
-    src_palette[2] = src_palette[2]* 255 - 128
-
-    tgt_palette[0] *= 100
-    tgt_palette[1] = tgt_palette[1]* 255 - 128
-    tgt_palette[2] = tgt_palette[2]* 255 - 128
-
-    src_palette_lab = np.clip(tensor_to_image(src_palette)[:, :, :3], 0, 100)  # LAB values for L channel range [0, 100]
-    tgt_palette_lab = np.clip(tensor_to_image(tgt_palette)[:, :, :3], 0, 100)
-
-    # Replace the L (luminance) channel in tgt_image_lab with that of src_image_lab
+    # Ensure LAB values are in the correct range before conversion
+    src_image_lab[0] *= 100  # Scale L* back to [0, 100]
+    src_image_lab[1] = src_image_lab[1] * 255 - 128  # Scale a* back to [-128, 127]
+    src_image_lab[2] = src_image_lab[2] * 255 - 128  # Scale b* back to [-128, 127]
     
+    tgt_image_lab[0] *= 100
+    tgt_image_lab[1] = tgt_image_lab[1] * 255 - 128
+    tgt_image_lab[2] = tgt_image_lab[2] * 255 - 128
+    
+    src_palette[0] *= 100
+    src_palette[1] = src_palette[1] * 255 - 128
+    src_palette[2] = src_palette[2] * 255 - 128
+    
+    tgt_palette[0] *= 100
+    tgt_palette[1] = tgt_palette[1] * 255 - 128
+    tgt_palette[2] = tgt_palette[2] * 255 - 128
+    
+    # Convert LAB images and palettes to RGB
+    src_image_rgb = np.clip(lab2rgb(src_image_lab), 0, 1)
+    tgt_image_rgb = np.clip(lab2rgb(tgt_image_lab), 0, 1)
+    src_palette_rgb = np.clip(lab2rgb(src_palette), 0, 1)
+    tgt_palette_rgb = np.clip(lab2rgb(tgt_palette), 0, 1)
 
-    # Convert LAB images and palettes to RGB for display
-    src_image_rgb = np.clip(lab2rgb(src_image_lab)*255, 0, 1)
-    tgt_image_rgb = np.clip(lab2rgb(tgt_image_lab)*255, 0, 1)
-    src_palette_rgb = np.clip(lab2rgb(src_palette_lab), 0, 1)
-    tgt_palette_rgb = np.clip(lab2rgb(tgt_palette_lab), 0, 1)
+
+    illu_np = tensor_to_image(illu)
 
     # Create figure with GridSpec
     fig = plt.figure(figsize=figsize)
