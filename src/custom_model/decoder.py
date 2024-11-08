@@ -79,7 +79,7 @@ class RecoloringDecoder(nn.Module):
     def forward(self, c1, c2, c3, c4, target_palettes, illu):
         bz, _, _, _ = c1.shape
         # Flatten and project target_palettes to create a conditioning embedding
-        target_palettes_flat = target_palettes.view(bz, -1)  # Shape: (bz, 4 * 16 * 4)
+        target_palettes_flat = target_palettes.reshape(bz, -1)  # Shape: (bz, 4 * 16 * 4)
         palette_embedding = self.palette_fc(target_palettes_flat)  # Shape: (bz, palette_embedding_dim)
 
         # Decoder with cross-attention conditioning

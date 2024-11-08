@@ -42,7 +42,18 @@ def create_palette_image(palette, convert_to_lab=True):
 
 
 def preprocess_image(src_image):
-    resized_img = src_image.resize((256, 256), Image.LANCZOS)
+    h = src_image.size[0]
+    w = src_image.size[1]
+    max_dim = 256
+    if h > w:
+        # Height is the larger dimension
+        new_h = max_dim
+        new_w = int(max_dim * (w / h))
+    else:
+        # Width is the larger dimension
+        new_w = max_dim
+        new_h = int(max_dim * (h / w))
+    resized_img = src_image.resize((new_h, new_w), Image.LANCZOS)
     lab_image = rgb2lab(np.array(resized_img)/255)
     lab_image[:, :, 0] = lab_image[:, :, 0]/100
     lab_image[:, :, 1:] = (lab_image[:, :, 1:] + 128)/ 256
@@ -92,38 +103,27 @@ def post_process(output, src_image):
 
 
 def test_model():
-    src_image = Image.open("../../datasets/processed_palettenet_data_sample_v4/Original/ADoorHues_5_8_24__ORG.png").convert("RGB")
+    # src_image = Image.open("../../datasets/processed_palettenet_data_sample_v4/Original/AutumnTones_7_26_24__ORG.png").convert("RGB")
+    src_image = Image.open("test_img_2.jpeg").convert("RGB")
     illu, src_lab_image = preprocess_image(src_image)
     palette = [
             [
-                191,
-                211,
-                250
+               255, 255, 255
             ],
             [
-                154,
-                173,
-                255
+               255, 221, 174
             ],
             [
-                116,
-                119,
-                244
+               255, 221, 174
             ],
             [
-                89,
-                92,
-                175
+                198, 231, 255
             ],
             [
-                151,
-                125,
-                118
+                212, 246, 255
             ],
             [
-                221,
-                218,
-                210
+               251, 251, 251
             ]
         ]
     # palette = [
@@ -168,8 +168,8 @@ def test_model():
     out_rgb_pil = post_process(output, src_image)
     tgt_dir = "Test_results/"
     os.makedirs(tgt_dir, exist_ok=True)
-    out_rgb_pil.save("Result_2.png")
-    src_image.save("input.png")
+    out_rgb_pil.save("Result_6.png")
+    src_image.save("input_2.png")
     
 
 
