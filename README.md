@@ -8,7 +8,7 @@ curl https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-arm64.sh -o ~/
 bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
 rm ~/miniconda3/miniconda.sh
 ```
-Make sure that you are using the conda interpretor, if you're on an IDE like VSCode.
+Make sure that you are using the conda interpretor, if you're on an IDE like VSCode. (macos shortcut - Cmd + Shift + P)
 ```
 conda create -n myenv python=3.12
 conda activate myenv
