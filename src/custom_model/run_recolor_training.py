@@ -2,8 +2,8 @@ import argparse
 from data import get_data
 from model import get_model
 from train_recolor import RecolorizeTrainer
-from google.colab import drive
-
+from PIL import Image
+from torchvision import transforms
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Training arguments for the Recolorization Trainer")
@@ -34,6 +34,8 @@ def parse_args():
     args = parser.parse_args()
     return args
     
+
+
 def get_data(dataset_path, output_folder=None, sample=None):
     transform = transforms.Compose([
         transforms.ToPILImage(),
@@ -41,18 +43,26 @@ def get_data(dataset_path, output_folder=None, sample=None):
         transforms.ToTensor(),
     ])
     data = RecolorizeDataset(json_path=dataset_path, transform=transform, sample=sample)
-    output_folder = "/content/drive/MyDrive/Converted_PIL_train_images_wandb/"
 
-    if output_folder:
-        os.makedirs(output_folder, exist_ok=True)
-        for idx, (image, label) in enumerate(data):
-            # Convert tensor to PIL image
-            pil_image = transforms.ToPILImage()(image)
-            filename = os.path.join(output_folder, f"image_{idx}.png")
-            pil_image.save(filename)
-            print(f"Saved {filename}")
+    # Use provided output folder or set a default
+    if output_folder is None:
+        output_folder = "./converted_images/"
+
+    # Create the output folder if it doesn't exist
+    os.makedirs(output_folder, exist_ok=True)
+
+    # Iterate through the dataset and save each image
+    for idx, (image, label) in enumerate(data):
+        # Convert tensor to PIL image
+        pil_image = transforms.ToPILImage()(image)
+
+        # Define the filename and save the image
+        filename = os.path.join(output_folder, f"image_{idx}.png")
+        pil_image.save(filename)
+        print(f"Saved {filename}")
 
     return data
+
 
 def run_training():
     args = parse_args()
