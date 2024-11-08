@@ -33,8 +33,8 @@ class RecolorizeDataset(Dataset):
             self.data = json.load(f)
         if sample is not None:
             self.data = random.sample(self.data, k=sample)
-        self.width = 512
-        self.height = 512
+        self.width = 256
+        self.height = 256
 
     def __len__(self):
         return len(self.data)
@@ -56,7 +56,13 @@ class RecolorizeDataset(Dataset):
 
         src_image_lab = rgb2lab(src_image/255)  # Convert to HxWxC for skimage
         tgt_image_lab = rgb2lab(tgt_image/255)
-    
+        src_image_lab[:, :, 0] /= 100
+        src_image_lab[:, :, 1] = (src_image_lab[:, :, 1] + 128)/ 256 
+        src_image_lab[:, :, 2] = (src_image_lab[:, :, 2] + 128)/ 256 
+        tgt_image_lab[:, :, 0] /= 100
+        tgt_image_lab[:, :, 1] = (tgt_image_lab[:, :, 1] + 128)/ 256 
+        tgt_image_lab[:, :, 2] = (tgt_image_lab[:, :, 2] + 128)/ 256 
+
         # Extract the L (luminance) channel for illuminance from source image in LAB
         illu = torch.from_numpy(src_image_lab[:, :, 0]).float()  # L channel only, as a tensor
     
@@ -84,6 +90,9 @@ class RecolorizeDataset(Dataset):
     
             # Convert RGB color to LAB and normalize
             color_lab = rgb2lab(np.array(color, dtype=np.float32).reshape(1, 1, 3) / 255.0).flatten()
+            color_lab[0] /= 100
+            color_lab[1] = (color_lab[1] + 128)/ 256 
+            color_lab[2] = (color_lab[2] + 128)/ 256 
     
             # Place LAB values in the RGB channels of the palette image
             palette_image[row:row+4, col:col+4, :3] = color_lab  # LAB channels

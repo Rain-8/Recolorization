@@ -57,7 +57,7 @@ def tensor_to_image(tensor):
     return tensor
 
 
-def log_images_and_metrics_custom(src_image, outputs, tgt_palette, step, num_samples=4):
+def log_images_and_metrics_custom(src_image, tgt_image, outputs, tgt_palette, step, num_samples=4):
     """
     Log images and metrics to Weights & Biases.
     
@@ -74,26 +74,57 @@ def log_images_and_metrics_custom(src_image, outputs, tgt_palette, step, num_sam
     # Convert tensors to numpy arrays and move to CPU if needed
     src_imgs = src_image[:num_samples].detach().cpu()
     gen_imgs = outputs[:num_samples].detach().cpu()
+    tgt_imgs = tgt_image[:num_samples].detach().cpu()
     palettes = tgt_palette[:num_samples].detach().cpu()
     
     src_image_labs = [np.clip(tensor_to_image(img), 0, 100) for img in src_imgs]
     gen_image_labs = [np.clip(tensor_to_image(img), 0, 100) for img in gen_imgs]
+    tgt_image_labs = [np.clip(tensor_to_image(img), 0, 100) for img in tgt_imgs]
+    src_image_labs = [
+        np.stack([
+            img[:, :, 0] * 100,          # L channel: [0, 1] -> [0, 100]
+            img[:, :, 1] * 255 - 128,    # a channel: [0, 1] -> [-128, 127]
+            img[:, :, 2] * 255 - 128     # b channel: [0, 1] -> [-128, 127]
+        ], axis=-1)
+        for img in src_image_labs
+    ]
+    gen_image_labs = [
+        np.stack([
+            img[:, :, 0] * 100,          # L channel: [0, 1] -> [0, 100]
+            img[:, :, 1] * 255 - 128,    # a channel: [0, 1] -> [-128, 127]
+            img[:, :, 2] * 255 - 128     # b channel: [0, 1] -> [-128, 127]
+        ], axis=-1)
+        for img in gen_image_labs
+    ]
+    tgt_image_labs = [
+        np.stack([
+            img[:, :, 0] * 100,          # L channel: [0, 1] -> [0, 100]
+            img[:, :, 1] * 255 - 128,    # a channel: [0, 1] -> [-128, 127]
+            img[:, :, 2] * 255 - 128     # b channel: [0, 1] -> [-128, 127]
+        ], axis=-1)
+        for img in tgt_image_labs
+    ]
 
     # Convert LAB images to RGB for logging
-    src_imgs_rgb = [np.clip(lab2rgb(img)*255, 0, 1) for img in src_image_labs]
-    gen_imgs_rgb = [np.clip(lab2rgb(img)*255, 0, 1) for img in gen_image_labs]
+    src_imgs_rgb = [np.clip(lab2rgb(img) * 255, 0, 255) for img in src_image_labs]
+    gen_imgs_rgb = [np.clip(lab2rgb(img) * 255, 0, 255) for img in gen_image_labs]
+    tgt_imgs_rgb = [np.clip(lab2rgb(img) * 255, 0, 255) for img in tgt_image_labs]
 
     # Convert LAB palettes to RGB for logging
     palettes_rgb = []
     for i in range(num_samples):
-        tgt_palette_lab = tensor_to_image(palettes[i])
-        palette_rgb = np.clip(lab2rgb(tgt_palette_lab) * 255, 0, 1)
+        tgt_palette_lab = np.clip(tensor_to_image(palettes[i]), 0, 100)
+        tgt_palette_lab[:, :, 0] = tgt_palette_lab[:, :, 0] * 100
+        tgt_palette_lab[:, :, 1] = tgt_palette_lab[:, :, 1] * 255 - 128
+        tgt_palette_lab[:, :, 2] = tgt_palette_lab[:, :, 2] * 255 - 128
+        palette_rgb = np.clip(lab2rgb(tgt_palette_lab) * 255, 0, 255)
         palettes_rgb.append(palette_rgb.astype(np.uint8))
 
     # Create wandb images
     wandb_images = {
         "validation/source_images": [wandb.Image(img, caption=f"Source Image {i}") for i, img in enumerate(src_imgs_rgb)],
         "validation/generated_images": [wandb.Image(img, caption=f"Generated Image {i}") for i, img in enumerate(gen_imgs_rgb)],
+        "validation/target_images": [wandb.Image(img, caption=f"Generated Image {i}") for i, img in enumerate(tgt_imgs_rgb)],
         "validation/target_palettes": [wandb.Image(palette, caption=f"Target Palette {i}") for i, palette in enumerate(palettes_rgb)],
     }
     

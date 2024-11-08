@@ -100,6 +100,7 @@ class RecolorizeTrainer:
                 if batch_idx == 0:
                     current_step = epoch + 1
                     log_images_and_metrics_custom(
+                        src_image,
                         tgt_image, 
                         outputs, 
                         tgt_palette,
