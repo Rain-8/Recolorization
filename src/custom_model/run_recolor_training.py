@@ -2,6 +2,8 @@ import argparse
 from data import get_data
 from model import get_model
 from train_recolor import RecolorizeTrainer
+from google.colab import drive
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Training arguments for the Recolorization Trainer")
@@ -39,14 +41,14 @@ def get_data(dataset_path, output_folder=None, sample=None):
         transforms.ToTensor(),
     ])
     data = RecolorizeDataset(json_path=dataset_path, transform=transform, sample=sample)
+    output_folder = "/content/drive/MyDrive/Converted_PIL_train_images_wandb/"
 
-    # If output_folder is provided, save images
     if output_folder:
         os.makedirs(output_folder, exist_ok=True)
         for idx, (image, label) in enumerate(data):
             # Convert tensor to PIL image
             pil_image = transforms.ToPILImage()(image)
-            filename = os.path.join(output_folder, "give folder name here")
+            filename = os.path.join(output_folder, f"image_{idx}.png")
             pil_image.save(filename)
             print(f"Saved {filename}")
 
@@ -58,6 +60,7 @@ def run_training():
     #train_data = get_data(args.train_data_path)
     #val_data = get_data(args.val_data_path)
     # Convert and save train/validation images before training
+    #tensor is in the format (C, H, W) with pixel values normalized to [0, 1]
     train_data = get_data(args.train_data_path, output_folder="./train_images/")
     val_data = get_data(args.val_data_path, output_folder="./val_images/")
     trainer = RecolorizeTrainer(model, train_dataset=train_data, eval_dataset=val_data, args=args)
