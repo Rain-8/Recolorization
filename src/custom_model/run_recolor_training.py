@@ -31,13 +31,35 @@ def parse_args():
 
     args = parser.parse_args()
     return args
+    
+def get_data(dataset_path, output_folder=None, sample=None):
+    transform = transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.Resize((256, 256)),
+        transforms.ToTensor(),
+    ])
+    data = RecolorizeDataset(json_path=dataset_path, transform=transform, sample=sample)
 
+    # If output_folder is provided, save images
+    if output_folder:
+        os.makedirs(output_folder, exist_ok=True)
+        for idx, (image, label) in enumerate(data):
+            # Convert tensor to PIL image
+            pil_image = transforms.ToPILImage()(image)
+            filename = os.path.join(output_folder, "give folder name here")
+            pil_image.save(filename)
+            print(f"Saved {filename}")
+
+    return data
 
 def run_training():
     args = parse_args()
     model = get_model()
-    train_data = get_data(args.train_data_path)
-    val_data = get_data(args.val_data_path)
+    #train_data = get_data(args.train_data_path)
+    #val_data = get_data(args.val_data_path)
+    # Convert and save train/validation images before training
+    train_data = get_data(args.train_data_path, output_folder="./train_images/")
+    val_data = get_data(args.val_data_path, output_folder="./val_images/")
     trainer = RecolorizeTrainer(model, train_dataset=train_data, eval_dataset=val_data, args=args)
     trainer.train()
 
