@@ -24,7 +24,7 @@ def load_model(model_path):
     # this has the model architecture
     model = get_model()
     print(model)
-    model_path = "checkpoint_epoch_30.pt" 
+    model_path = "checkpoint_epoch_40.pt" 
     modelfile = torch.load(model_path,map_location=torch.device('cpu'))
     model.load_state_dict(modelfile['model_state_dict'])
     # weights
