@@ -11,6 +11,8 @@ rm ~/miniconda3/miniconda.sh
 
 ```
 conda create -n myenv python=3.12
+conda activate myenv
+conda deactivate myenv # when you want to exit
 ```
 ```
 pip install -r requirements.txt
