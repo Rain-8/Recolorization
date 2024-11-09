@@ -86,9 +86,12 @@ if uploaded_file is not None:
     rgb_image = Image.open(uploaded_file).convert("RGB")
     st.image(rgb_image, caption='Input RGB Image', use_column_width=True)
     colors = []
+    cols = st.columns(6)   # Create six columns for six colors
+    
     for i in range(6):
-        color = st.color_picker(f"Pick Color {i + 1}", "#FFFFFF")  # Default to white
-        colors.append([int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)])  # Convert hex to RGB
+        with cols[i]:   # Use each column context for the color picker
+            color = st.color_picker(f"Pick Color {i + 1}", "#FFFFFF")  
+            colors.append([int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)]) 
 
     illu, src_lab_image = preprocess_image(rgb_image)
     tgt_palette = create_palette_image(colors)
