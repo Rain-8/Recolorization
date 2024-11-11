@@ -126,38 +126,6 @@ def test_model():
                251, 251, 251
             ]
         ]
-    # palette = [
-    #         [
-    #             227,
-    #             208,
-    #             170
-    #         ],
-    #         [
-    #             197,
-    #             178,
-    #             93
-    #         ],
-    #         [
-    #             141,
-    #             137,
-    #             2
-    #         ],
-    #         [
-    #             106,
-    #             103,
-    #             23
-    #         ],
-    #         [
-    #             109,
-    #             135,
-    #             142
-    #         ],
-    #         [
-    #             216,
-    #             218,
-    #             227
-    #         ]
-    #     ]
     tgt_palette = create_palette_image(palette)
     src_lab_image = src_lab_image.unsqueeze(0)
     illu = illu.unsqueeze(0)
