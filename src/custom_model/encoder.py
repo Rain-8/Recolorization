@@ -29,6 +29,8 @@ class SelfAttention(nn.Module):
         attn_output = attn_output.permute(1, 2, 0).reshape(b, c, h, w)
         return x.permute(1, 2, 0).reshape(b, c, h, w) + attn_output
 
+
+
 class ResidualBlock(nn.Module):
     def __init__(self, in_channels, out_channels):
         super().__init__()

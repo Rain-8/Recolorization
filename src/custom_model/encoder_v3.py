@@ -1,6 +1,7 @@
 from functools import partial
 import torch.nn as nn
 import torch.nn.functional as F
+from attention import SelfAttention
 
 
 class Conv2dAuto(nn.Conv2d):
@@ -91,7 +92,7 @@ class ResNetLayer(nn.Module):
         return x
 
 
-class SelfAttention(nn.Module):
+class SelfAttentionTorch(nn.Module):
     def __init__(self, embed_dim, num_heads):
         super(SelfAttention, self).__init__()
         self.multihead_attn = nn.MultiheadAttention(embed_dim, num_heads)
@@ -121,7 +122,7 @@ class SelfAttention(nn.Module):
 
 
 class FeatureEncoder(nn.Module):
-    def __init__(self):
+    def __init__(self, use_pytorch_attn=False):
         super(FeatureEncoder, self).__init__()
         
         # Convolutional layer
@@ -135,9 +136,14 @@ class FeatureEncoder(nn.Module):
         self.res3 = ResNetLayer(256, 512, block=ResNetBasicBlock, n=1)
 
         # Self-Attention layers after each residual block
-        self.attn1 = SelfAttention(embed_dim=128, num_heads=1)
-        self.attn2 = SelfAttention(embed_dim=256, num_heads=1)
-        self.attn3 = SelfAttention(embed_dim=512, num_heads=1)
+        if use_pytorch_attn:
+            self.attn1 = SelfAttentionTorch(embed_dim=128, num_heads=1)
+            self.attn2 = SelfAttentionTorch(embed_dim=256, num_heads=1)
+            self.attn3 = SelfAttentionTorch(embed_dim=512, num_heads=1)
+        else:
+            self.attn1 = SelfAttention(embed_dim=128, num_heads=1)
+            self.attn2 = SelfAttention(embed_dim=256, num_heads=1)
+            self.attn3 = SelfAttention(embed_dim=512, num_heads=1)
     
     def forward(self, x):
         # Initial convolution and pooling

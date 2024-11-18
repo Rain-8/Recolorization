@@ -13,28 +13,20 @@ from skimage.color import lab2rgb
 from PIL import Image
 
 
-def get_illuminance(img):
-    """
-    Get the luminance of an image. Shape: (h, w)
-    """
-    img = img.permute(1, 2, 0)  # (h, w, channel) 
-    img = img.numpy()
-    img = img.astype(np.float32) / 255.0
-    img_L = img[:, :, 0]  # luminance (h, w)
-    return torch.from_numpy(img_L)
-
-
 class RecolorizeDataset(Dataset):
-    def __init__(self, json_path, transform=None, sample=None):
+    def __init__(self, json_path, dim=None, sample=None):
         super().__init__()
-        self.transform = transform
         # Load the JSON data
         with open(json_path, 'r') as f:
             self.data = json.load(f)
         if sample is not None:
             self.data = random.sample(self.data, k=sample)
+        
         self.width = 256
         self.height = 256
+        if dim is not None:
+            self.width = dim[0]
+            self.height = dim[1]
 
     def __len__(self):
         return len(self.data)
@@ -109,6 +101,36 @@ class RecolorizeDataset(Dataset):
         data = RecolorizeDataset(json_path=dataset_path, sample=sample)
         return data
     
+
+class RecolorizeDatasetWithVariablePalette(RecolorizeDataset):
+    def __init__(self, json_path, dim=None, sample=None):
+        super().__init__(json_path, dim, sample)
+    def create_palette_image(self, palette, convert_to_lab=True):
+        """
+        Create a 4x24x4 palette image from a palette list, with colors in LAB format. 
+        Each color occupies a 4x4 block. The alpha channel is set to 1 for existing colors and 0 for non-existing slots.
+        """
+        palette_image = np.zeros((4, 24, 4), dtype=np.float32)  # Initialize with zeros (RGBA)
+        new_palette = random.sample(palette, k=random.randint(1, len(palette)))
+
+        for i, color in enumerate(new_palette):
+            row = (i // 6) * 4  # Each row contains 6 colors, starting at row 0 or 4
+            col = (i % 6) * 4   # Each color occupies a 4x4 block
+    
+            # Convert RGB color to LAB and normalize
+            color_lab = rgb2lab(np.array(color, dtype=np.float32).reshape(1, 1, 3) / 255.0).flatten()
+            color_lab[0] /= 100
+            color_lab[1] = (color_lab[1] + 128)/ 256 
+            color_lab[2] = (color_lab[2] + 128)/ 256 
+            
+
+            # Place LAB values in the RGB channels of the palette image
+            palette_image[row:row+4, col:col+4, :3] = color_lab  # LAB channels
+            palette_image[row:row+4, col:col+4, 3] = 1
+    
+        # Convert to torch tensor and reorder to (channels, height, width)
+        return torch.from_numpy(palette_image).permute(2, 0, 1)  # Shape (4, 4, 24)
+    
     
 def visualize_and_save_recolor_data(src_image, tgt_image, illu, src_palette, tgt_palette, output_dir="output"):
     """
@@ -126,19 +148,30 @@ def visualize_and_save_recolor_data(src_image, tgt_image, illu, src_palette, tgt
         return tensor
 
     # Convert LAB images to RGB for saving
-    src_image = np.clip(tensor_to_image(src_image), 0, 100)
-    tgt_image = np.clip(tensor_to_image(tgt_image), 0, 100)
+    src_image_np = tensor_to_image(src_image)
+    src_image_np[:, :, 0] = np.clip(src_image_np[:, :, 0], 0, 1) * 100
+    src_image_np[:, :, 1:] = np.clip(src_image_np[:, :, 1:], 0, 1) * 255 - 128
+
+    tgt_image_np = tensor_to_image(tgt_image)
+    tgt_image_np[:, :, 0] = np.clip(tgt_image_np[:, :, 0], 0, 1) * 100
+    tgt_image_np[:, :, 1:] = np.clip(tgt_image_np[:, :, 1:], 0, 1) * 255 - 128
+
     illu_np = tensor_to_image(illu)
 
     # Normalize and prepare palettes in LAB format
-    src_palette_lab = np.clip(tensor_to_image(src_palette)[:, :, :3], 0, 100)
-    tgt_palette_lab = np.clip(tensor_to_image(tgt_palette)[:, :, :3], 0, 100)
+    src_palette_np = tensor_to_image(src_palette)[:, :, :3]
+    src_palette_np[:, :, 0] = np.clip(src_palette_np[:, :, 0], 0, 1) * 100
+    src_palette_np[:, :, 1:3] = np.clip(src_palette_np[:, :, 1:3], 0, 1) *  255 - 128
+
+    tgt_palette_np = tensor_to_image(tgt_palette)[:, :, :3]
+    tgt_palette_np[:, :, 0] = np.clip(tgt_palette_np[:, :, 0], 0, 1) * 100
+    tgt_palette_np[:, :, 1:3] = np.clip(tgt_palette_np[:, :, 1:3], 0, 1) *  255 - 128
 
     # Convert LAB to RGB
-    src_image_rgb = (lab2rgb(src_image) * 255).astype(np.uint8)
-    tgt_image_rgb = (lab2rgb(tgt_image) * 255).astype(np.uint8)
-    src_palette_rgb = (lab2rgb(src_palette_lab) * 255).astype(np.uint8)
-    tgt_palette_rgb = (lab2rgb(tgt_palette_lab) * 255).astype(np.uint8)
+    src_image_rgb = (lab2rgb(src_image_np) * 255).astype(np.uint8)
+    tgt_image_rgb = (lab2rgb(tgt_image_np) * 255).astype(np.uint8)
+    src_palette_rgb = (lab2rgb(src_palette_np) * 255).astype(np.uint8)
+    tgt_palette_rgb = (lab2rgb(tgt_palette_np) * 255).astype(np.uint8)
     illu_rgb = (illu_np * 255).astype(np.uint8)
 
     # Save images using PIL
@@ -151,19 +184,17 @@ def visualize_and_save_recolor_data(src_image, tgt_image, illu, src_palette, tgt
     print(f"Images saved in directory: {output_dir}")
 
 
-def get_data(dataset_path, sample=None):
-    transform = transforms.Compose([
-        transforms.ToPILImage(),
-        transforms.Resize((256, 256)),
-        transforms.ToTensor(),
-    ])
-    data = RecolorizeDataset(json_path=dataset_path, transform=transform, sample=sample)
+def get_data(dataset_path, dim=None, sample=None, variable_palette=False):
+    if variable_palette:
+        data = RecolorizeDatasetWithVariablePalette(json_path=dataset_path, dim=dim, sample=sample)
+        return data
+    data = RecolorizeDataset(json_path=dataset_path, dim=dim, sample=sample)
     return data
 
 if __name__=="__main__":
     # Path to the JSON file
     dataset_path = "../../datasets/processed_palettenet_data_sample_v4/val.json"  # Update with your path
-    data = get_data(dataset_path)
+    data = get_data(dataset_path, variable_palette=True)
 
     # Get a sample from the dataset and visualize
     src_image, tgt_image, illu, src_palette, tgt_palette = data[6]

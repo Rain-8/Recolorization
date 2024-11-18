@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from attention import CrossAttention
 
 class DoubleConv(nn.Module):
     """(convolution => Instance Norm => Leaky ReLU) * 2"""
@@ -19,7 +20,7 @@ class DoubleConv(nn.Module):
         return self.double_conv(x)
  
 
-class CrossAttention(nn.Module):
+class CrossAttentionTorch(nn.Module):
     def __init__(self, embed_dim, palette_embed, num_heads):
         super().__init__()
         self.multihead_attn = nn.MultiheadAttention(embed_dim, num_heads)
@@ -55,17 +56,23 @@ def adjust_target_palettes(target_palettes_emb, h, w):
 
 
 class RecoloringDecoder(nn.Module):
-    def __init__(self, palette_embedding_dim=64, num_heads=1):
+    def __init__(self, palette_embedding_dim=64, num_heads=1, use_cross_attn_torch=True):
         super().__init__()
         self.palette_embedding_dim = palette_embedding_dim
         self.palette_fc = nn.Linear(4 * 24 * 3, palette_embedding_dim)
         self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)  
 
         # Cross-attention layers for palette conditioning at each decoding stage
-        self.cross_attn_4 = CrossAttention(256, palette_embedding_dim, num_heads)
-        self.cross_attn_3 = CrossAttention(128, palette_embedding_dim, num_heads)
-        self.cross_attn_2 = CrossAttention(64, palette_embedding_dim, num_heads)
-        self.cross_attn_1 = CrossAttention(64, palette_embedding_dim, num_heads)
+        if use_cross_attn_torch:
+            self.cross_attn_4 = CrossAttentionTorch(256, palette_embedding_dim, num_heads)
+            self.cross_attn_3 = CrossAttentionTorch(128, palette_embedding_dim, num_heads)
+            self.cross_attn_2 = CrossAttentionTorch(64, palette_embedding_dim, num_heads)
+            self.cross_attn_1 = CrossAttentionTorch(64, palette_embedding_dim, num_heads)
+        else:
+            self.cross_attn_4 = CrossAttention(256, palette_embedding_dim, num_heads)
+            self.cross_attn_3 = CrossAttention(128, palette_embedding_dim, num_heads)
+            self.cross_attn_2 = CrossAttention(64, palette_embedding_dim, num_heads)
+            self.cross_attn_1 = CrossAttention(64, palette_embedding_dim, num_heads)
 
         # DoubleConv layers for each decoding stage
         self.dconv_up_4 = DoubleConv(512, 256)
