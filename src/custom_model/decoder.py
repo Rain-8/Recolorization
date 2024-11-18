@@ -56,10 +56,12 @@ def adjust_target_palettes(target_palettes_emb, h, w):
 
 
 class RecoloringDecoder(nn.Module):
-    def __init__(self, palette_embedding_dim=64, num_heads=1, use_cross_attn_torch=True):
+    def __init__(self, palette_embedding_dim=64, num_heads=1, use_cross_attn_torch=True, variable_pal_size=False):
         super().__init__()
         self.palette_embedding_dim = palette_embedding_dim
         self.palette_fc = nn.Linear(4 * 24 * 3, palette_embedding_dim)
+        if variable_pal_size:
+            self.palette_fc = nn.Linear(4 * 24 * 4, palette_embedding_dim)
         self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)  
 
         # Cross-attention layers for palette conditioning at each decoding stage
