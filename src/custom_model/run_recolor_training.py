@@ -12,6 +12,7 @@ def parse_args():
     parser.add_argument("--learning_rate", type=float, default=5e-5, help="Learning rate")
     parser.add_argument("--num_epochs", type=int, default=3, help="Number of training epochs")
     parser.add_argument("--sample", type=int, default=None, help="Data samples")
+    parser.add_argument("--variable_palette", action="store_true", help="Use variable palette")
 
     # Logging and validation intervals
     parser.add_argument("--logging_interval", type=int, default=1, help="Interval (in epochs) for logging training loss to WandB")
@@ -37,12 +38,8 @@ def parse_args():
 def run_training():
     args = parse_args()
     model = get_model()
-    #train_data = get_data(args.train_data_path)
-    #val_data = get_data(args.val_data_path)
-    # Convert and save train/validation images before training
-    #tensor is in the format (C, H, W) with pixel values normalized to [0, 1]
-    train_data = get_data(args.train_data_path)
-    val_data = get_data(args.val_data_path)
+    train_data = get_data(args.train_data_path, variable_palette=args.variable_palette, sample=args.sample)
+    val_data = get_data(args.val_data_path, variable_palette=args.variable_palette, sample=args.sample)
     trainer = RecolorizeTrainer(model, train_dataset=train_data, eval_dataset=val_data, args=args)
     trainer.train()
 
