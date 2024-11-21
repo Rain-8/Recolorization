@@ -10,6 +10,6 @@ datasets/sample
 **/*.pyc
 
 # large and unnecessary files
-**/*ckpts
+**/*ckpts*
 **/wandb
 **/*.pt
