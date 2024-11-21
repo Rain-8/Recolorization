@@ -4,18 +4,17 @@ from decoder import RecoloringDecoder
 
 
 class RecolorizerModel(nn.Module):
-    def __init__(self):
+    def __init__(self, args):
         super().__init__()
         self.encoder = FeatureEncoder()
-        self.decoder = RecoloringDecoder()
+        self.decoder = RecoloringDecoder(variable_pal_size=args.variable_palette)
 
     def forward(self, ori_img, tgt_palette, illu):
         c1, c2, c3, c4 = self.encoder(ori_img)
-        # print(c1, c2, c3, c4)
         out = self.decoder(c1, c2, c3, c4, tgt_palette, illu)
         return out
     
 
-def get_model():
-    model = RecolorizerModel()
+def get_model(args):
+    model = RecolorizerModel(args)
     return model

@@ -113,7 +113,7 @@ def log_images_and_metrics_custom(src_image, tgt_image, outputs, tgt_palette, st
     # Convert LAB palettes to RGB for logging
     palettes_rgb = []
     for i in range(num_samples):
-        tgt_palette_lab = np.clip(tensor_to_image(palettes[i]), 0, 100)
+        tgt_palette_lab = np.clip(tensor_to_image(palettes[i]), 0, 100)[:, :, :3]
         tgt_palette_lab[:, :, 0] = tgt_palette_lab[:, :, 0] * 100
         tgt_palette_lab[:, :, 1] = tgt_palette_lab[:, :, 1] * 255 - 128
         tgt_palette_lab[:, :, 2] = tgt_palette_lab[:, :, 2] * 255 - 128

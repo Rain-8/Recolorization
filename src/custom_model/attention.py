@@ -68,13 +68,13 @@ class CrossAttention(nn.Module):
         # Reshape and project for key and value
         b, c, h, w = x.shape
         x_flat = x.view(b, c, h * w).permute(2, 0, 1)  # Shape: (h * w, b, c)
-        k = self.linear_k(x_flat)  # Key projection
-        v = self.linear_v(x_flat)  # Value projection
+        k = self.W_k(x_flat)  # Key projection
+        v = self.W_v(x_flat)  # Value projection
 
         # Expand palette_embedding and project for query
         b_, c_, h_, w_ = palette_embedding.shape
         palette_embedding = palette_embedding.view(b_, c_, h_ * w_).permute(2, 0, 1)
-        q = self.linear_q(palette_embedding)
+        q = self.W_q(palette_embedding)
 
         # Apply multi-head attention with separate keys and values
         q = q.view(b, -1, self.num_heads, self.head_dim).transpose(1, 2)  # (b, num_heads, h*w, head_dim)
@@ -92,5 +92,4 @@ class CrossAttention(nn.Module):
 
         # Reshape back to original spatial dimensions
         attn_output = attn_output.permute(0, 2, 1).reshape(b, c, h, w)  # (b, c, h, w)
-
         return x + attn_output  # Concatenate along the channel dimension
