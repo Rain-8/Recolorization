@@ -19,9 +19,12 @@ class RecolorizeDataset(Dataset):
         # Load the JSON data
         with open(json_path, 'r') as f:
             self.data = json.load(f)
+
+        # Optionally sample a subset of the data if 'sample' is provided
         if sample is not None:
             self.data = random.sample(self.data, k=sample)
         
+        # Set default image dimensions (256x256) or use provided dimensions
         self.width = 256
         self.height = 256
         if dim is not None:
@@ -46,6 +49,7 @@ class RecolorizeDataset(Dataset):
         tgt_image = cv2.cvtColor(tgt_image, cv2.COLOR_BGR2RGB)
         tgt_image = cv2.resize(tgt_image, (self.width, self.height), interpolation=cv2.INTER_LINEAR)
 
+        # Convert images to LAB format for color processing
         src_image_lab = rgb2lab(src_image/255)  # Convert to HxWxC for skimage
         tgt_image_lab = rgb2lab(tgt_image/255)
         src_image_lab[:, :, 0] /= 100
