@@ -2,7 +2,8 @@ datasets/IMAGE_DATASET_FOR_COLORTHIEF
 datasets/processed_palettenet_data_sample
 datasets/raw_recolor_data_sample
 datasets/sample
-**/test_*
+**/test_results
+**/test_images
 **/output
 
 # python compiled files
