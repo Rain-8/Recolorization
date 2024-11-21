@@ -13,13 +13,32 @@ Make sure that you are using the conda interpretor, if you're on an IDE like VSC
 conda create -n myenv python=3.12
 conda activate myenv
 conda deactivate myenv # when you want to exit
+pip install -r requirements.txt
 ```
+
+## Training Setup
+### For getting the dataset
 ```
-pip install -r requirements.txt # if works
+dvc pull datasets/processed_palettenet_data_sample_v4
+cd src/custom_model
+python data.py # to visualize the data
 ```
+
+### For training on GPU
 ```
-python model.py
-pip install streamlit
+# ensure you have the dataset
+cd src/custom_model
+./train_gpu.sh
+```
+
+
+## Streamlit App Setup
+
+Download the model in `deployments/streamlit_app`
+
+```
+pip install -r requirements_deploy.txt
 pip install watchdog
-pip install dvc
+cd deployments/streamlit_app
+streamlit run streamlit_app.py
 ```
