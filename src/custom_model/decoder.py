@@ -56,7 +56,7 @@ def adjust_target_palettes(target_palettes_emb, h, w):
 
 
 class RecoloringDecoder(nn.Module):
-    def __init__(self, palette_embedding_dim=64, num_heads=1, use_cross_attn_torch=True, variable_pal_size=False):
+    def __init__(self, palette_embedding_dim=64, num_heads=1, use_cross_attn_torch=False, variable_pal_size=False):
         super().__init__()
         self.palette_embedding_dim = palette_embedding_dim
         self.palette_fc = nn.Linear(4 * 24 * 3, palette_embedding_dim)
