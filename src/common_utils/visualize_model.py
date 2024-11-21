@@ -1,5 +1,10 @@
+import os
+import sys
+
 import torch
 from torchviz import make_dot
+
+sys.path.insert(0, "../custom_model/")
 from model import get_model  # Adjust the import according to your file structure
 
 # Create an instance of the model
@@ -17,4 +22,5 @@ output = model(ori_img, tgt_palette, illu)
 dot = make_dot(output, params=dict(model.named_parameters()))
 
 # Save the graph as a PDF or PNG file
-dot.render("recolorizer_model", format="png")  # Change format as needed
+os.makedirs("../../assets/", exist_ok=True)
+dot.render("../../assets/recolorizer_model", format="png")  # Change format as needed
