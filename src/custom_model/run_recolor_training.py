@@ -36,6 +36,13 @@ def parse_args():
 
 
 def run_training():
+    """
+    Runs the training process for the Recolorization Trainer.
+
+    This function parses the command-line arguments, initializes the model,
+    retrieves the training and validation datasets, and instantiates a RecolorizeTrainer
+    to execute the training loop.
+    """
     args = parse_args()
     model = get_model(args)
     train_data = get_data(args.train_data_path, variable_palette=args.variable_palette, sample=args.sample)

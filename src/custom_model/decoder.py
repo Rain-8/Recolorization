@@ -4,16 +4,15 @@ import torch.nn.functional as F
 from attention import CrossAttention
 
 class DoubleConv(nn.Module):
-    """(convolution => Instance Norm => Leaky ReLU) * 2"""
+    '''
+    (convolution => Instance Norm => ReLU)
+    '''
     def __init__(self, in_channels, out_channels):
         super().__init__()
         self.double_conv = nn.Sequential(
             nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1, bias=False),
             nn.InstanceNorm2d(out_channels),
             nn.ReLU(inplace=True),
-            # nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1, bias=False),
-            # nn.BatchNorm2d(out_channels),
-            # nn.LeakyReLU(negative_slope=0.02, inplace=True)
         )
 
     def forward(self, x):
@@ -46,11 +45,11 @@ class CrossAttentionTorch(nn.Module):
         attn_output = attn_output.permute(1, 2, 0).view(b, c, h, w)  # Reshape back to (b, c, h, w)
         
         # Concatenate attention output with the original feature map
-        return x + attn_output  # Concatenate along the channel dimension
+        return x + attn_output  # Add along the channel dimension
 
 
 def adjust_target_palettes(target_palettes_emb, h, w):
-    # Starting with the initial target_palettes shape
+    # Repeat target_palettes_emb to match the dimensions of the feature map
     target_palettes = target_palettes_emb.unsqueeze(2).unsqueeze(3).repeat(1, 1, h, w)
     return target_palettes
 

@@ -16,10 +16,28 @@ from common_utils.train_utils.log_to_wandb import log_images_and_metrics_custom
 
 class RecolorizeTrainer:
     def __init__(self, model, train_dataset, eval_dataset, args):
-        # Initialize Accelerator
-        self.accelerator = Accelerator()
+        """
+        Initialize the RecolorizeTrainer.
 
-        # Prepare model, optimizer, and dataloaders with accelerator
+        Args:
+            model: The PyTorch model to be trained.
+            train_dataset: The dataset used for training.
+            eval_dataset: The dataset used for evaluation.
+            args: The command line arguments.
+
+        Attributes:
+            model: The PyTorch model to be trained.
+            train_dataset: The dataset used for training.
+            eval_dataset: The dataset used for evaluation.
+            train_batch_size: The batch size used for training.
+            val_batch_size: The batch size used for evaluation.
+            validation_interval: The interval to run evaluation.
+            logging_interval: The interval to log metrics.
+            checkpointing_interval: The interval to save checkpoints.
+            checkpoint_dir: The directory to save checkpoints.
+            run_name: The name of the run.
+        """
+        self.accelerator = Accelerator()
         self.model = model
         self.train_dataset = train_dataset
         self.eval_dataset = eval_dataset
@@ -56,7 +74,23 @@ class RecolorizeTrainer:
         )
 
     def train(self):
-        # Training loop
+        """
+        Train the model.
+
+        The model is trained for `self.num_epochs` epochs with batches of size `self.train_batch_size`.
+
+        The training loop consists of the following steps:
+
+        1. Forward pass: The model is run on the input images and the target images are computed.
+        2. Backward pass: The loss is computed and the gradients are propagated backwards.
+        3. Optimization step: The optimizer is stepped and the gradients are zeroed.
+
+        The loss is logged to Weights & Biases at every `self.logging_interval` epochs.
+
+        The model is evaluated at every `self.validation_interval` epochs.
+
+        The model is saved at every `self.checkpointing_interval` epochs.
+        """
         self.model.train()
         for epoch in range(self.num_epochs):
             print(f"Epoch {epoch + 1}/{self.num_epochs}")

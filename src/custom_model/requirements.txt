@@ -8,3 +8,4 @@ scikit-image==0.24.0
 colorthief==0.2.1
 pylette==4.0.0
 # streamlit==1.0.0
+torchviz==0.0.2
