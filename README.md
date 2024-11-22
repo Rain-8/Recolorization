@@ -19,6 +19,13 @@ We extended the PaletteNet architecture by incorporating `additional attention l
 ### Training
 We used accelerate to train the model on a `single A100 GPU`. We had to resize our images to `256 x 256` to ensure it doesn't go CUDA OOM since we didn't have access to more than 1 GPU. Our training time was around `3 hours`.
 
+## Code Introduction
+Our model is in `src/custom_model`. The starting point of our code is [train_gpu.sh](src/custom_model/train_gpu.sh). It starts the training using Huggingface accelerator. The config for that is in [common_utils/configs/accelerate_single_gpu_config.yaml](src/common_utils/configs/accelerate_single_gpu_config.yaml). It will start with [run_recolor_training.py](src/custom_model/run_recolor_training.py) which with initialize the `trainer` and call the `train` function. The dataset class is defined in [data.py](src/custom_model/data.py). The `trainer` is defined in [train_recolor.py](src/custom_model/train_recolor.py). Our model is defined in [model.py](src/custom_model/model.py) which includes initializes the encoder and decoder objects from [encoder_v3.py](src/custom_model/encoder_v3.py) and [decoder.py](src/custom_model/decoder.py) respectively. 
+Checkpoints will be saved in `src/custom_model/recolor_model_ckpts`.
+
+Once training is done, we can test the model from `src_infer/custom_model`. Instructions are there in [Setup File](Setup.md).
+
+Our Streamlit application is in `deployments/streamlit_app`. 
 
 ## Limitations
 Since we added Attention layers, we have to resize our images to a smaller dimension for inference to run on CPU.
