@@ -14,7 +14,7 @@ We extended the PaletteNet architecture by incorporating `additional attention l
 
 
 ### Encoder and Decoder 
-<img src="assets/Screenshot 2024-11-20 at 8.46.11 PM.png" width="400"> <img src="assets/Screenshot 2024-11-20 at 8.46.41 PM.png" width="600">
+<img src="assets/Screenshot 2024-11-20 at 8.46.11 PM.png" width="600" height="400"> <img src="assets/Screenshot 2024-11-20 at 8.46.41 PM.png" width="600" height="400">
 
 ### Training
 We used accelerate to train the model on a `single A100 GPU`. We had to resize our images to `256 x 256` to ensure it doesn't go CUDA OOM since we didn't have access to more than 1 GPU. Our training time was around `3 hours`.
