@@ -3,8 +3,7 @@ datasets/processed_palettenet_data_sample
 datasets/raw_recolor_data_sample
 datasets/sample
 **/test_results
-**/test_images
-**/*_images
+
 **/output
 
 # python compiled files
