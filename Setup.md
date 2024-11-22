@@ -30,6 +30,13 @@ python data.py # to visualize the data
 cd src/custom_model
 ./train_gpu.sh
 ```
+### For testing 
+Download the model in `src_infer/custom_model` from [here](https://drive.google.com/file/d/1dLir8CG_BdsSfxCKlHDgpOPShKpWooRr/view?usp=sharing)
+```
+cd src_infer/custom_model
+python test_model.py
+```
+The results will be saved in `src_infer/custom_model/test_results`.
 
 
 ## Streamlit App Setup

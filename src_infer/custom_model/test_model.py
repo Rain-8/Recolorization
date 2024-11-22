@@ -143,7 +143,7 @@ def test_model():
         out_palette.save(tgt_dir + src_image_path.split("/")[-1].split(".")[0] + "_palette." + src_image_path.split(".")[-1])
         results[src_image_path] = {
             "tgt_image_path": tgt_dir + src_image_path.split("/")[-1],
-            "pal_image_path": "palettenet_images/" + src_image_path.split("/")[-1],
+            "pal_image_path": "../../assets/palettenet_images/" + src_image_path.split("/")[-1],
             "tgt_palette": palette
         }
     with open(tgt_dir + "test_meta.json", "w") as f:
