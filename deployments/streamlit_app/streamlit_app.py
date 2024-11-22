@@ -77,7 +77,7 @@ if uploaded_file is not None:
     col1, col2 = st.columns(2)
     
     with col1:
-        st.image(rgb_image, caption='Input RGB Image', use_column_width=True)
+        st.image(rgb_image, caption='Input RGB Image', use_container_width=True)
 
     colors = []
     
@@ -102,4 +102,4 @@ if uploaded_file is not None:
         out_rgb_pil = post_process(output, rgb_image)
 
         with col2:
-            st.image(out_rgb_pil, caption='Output RGB Image', use_column_width=True)
+            st.image(out_rgb_pil, caption='Output RGB Image', use_container_width=True)

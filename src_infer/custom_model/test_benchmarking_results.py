@@ -5,8 +5,6 @@ import torch
 import numpy as np
 from PIL import Image
 from skimage.color import rgb2lab, lab2rgb
-import sys
-sys.path.insert(0, "../")
 from model import get_model
 
 import logging
@@ -45,7 +43,7 @@ def create_palette_image(palette):
 def preprocess_image(src_image):
     """Preprocess the source image for the model."""
     h, w = src_image.size
-    max_dim = 256
+    max_dim = 400
     resized_img = src_image.resize((max_dim, max_dim), Image.LANCZOS)
     lab_image = rgb2lab(np.array(resized_img) / 255)
     lab_image[:, :, 0] /= 100
@@ -105,9 +103,9 @@ def test_model_benchmark(benchmark, model):
             out_rgb_pil = post_process(output, src_image)
 
             # Save the output image for visual inspection
-            output_path = "test_images/output/benchmark_result.png"
-            out_rgb_pil.save(output_path)
-            print(f"Output image saved at: {output_path}")
+            # output_path = "test_results/benchmark_output/benchmark_result.png"
+            # out_rgb_pil.save(output_path)
+            # print(f"Output image saved at: {output_path}")
 
     # Use the benchmark fixture to measure the execution time
     benchmark(run_model)

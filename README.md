@@ -19,6 +19,7 @@ We extended the PaletteNet architecture by incorporating `additional attention l
 ### Training
 We used accelerate to train the model on a `single A100 GPU`. We had to resize our images to `256 x 256` to ensure it doesn't go CUDA OOM since we didn't have access to more than 1 GPU. Our training time was around `3 hours`.
 
+
 ## Limitations
 Since we added Attention layers, we have to resize our images to a smaller dimension for inference to run on CPU.
 
