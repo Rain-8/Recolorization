@@ -121,8 +121,9 @@ def get_images_and_palettes(json_file_path):
     return results
 
 def test_model():
-    tgt_dir = "Test_results/"
-    test_data = get_images_and_palettes("test_model.json")
+    tgt_dir = "test_results/"
+    os.makedirs(tgt_dir, exist_ok=True)
+    test_data = get_images_and_palettes("testing_data/test_model.json")
     print("Length of test data:", len(test_data))
     model = load_model()
     results = {}
@@ -137,9 +138,9 @@ def test_model():
             output = model(src_lab_image, tgt_palette, illu)
         out_rgb_pil = post_process(output, src_image)
         out_palette = post_process(tgt_palette, src_image)
-        os.makedirs(tgt_dir, exist_ok=True)
+        
         out_rgb_pil.save(tgt_dir + src_image_path.split("/")[-1])
-        out_palette.save(tgt_dir + src_image_path.split("/")[-1].split(".")[0] + "_palette.png")
+        out_palette.save(tgt_dir + src_image_path.split("/")[-1].split(".")[0] + "_palette." + src_image_path.split(".")[-1])
         results[src_image_path] = {
             "tgt_image_path": tgt_dir + src_image_path.split("/")[-1],
             "pal_image_path": "palettenet_images/" + src_image_path.split("/")[-1],
