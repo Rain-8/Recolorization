@@ -12,11 +12,9 @@ Given an image and a palette, we aim to recolorize that image with the palette t
 ### Model Architecture
 We extended the PaletteNet architecture by incorporating additional attention layers into both the Encoder and Decoder components. Furthermore, we represented the target palette as an image, enabling support for variable palette sizes while ensuring that illumination adjustments are applied exclusively to the colors in the palette. 
 
-### Encoder
-![alt text](<assets/Screenshot 2024-11-20 at 8.46.11 PM.png>)
 
-### Decoder 
-![alt text](<assets/Screenshot 2024-11-20 at 8.46.41 PM.png>)
+### Encoder and Decoder 
+<img src="assets/Screenshot 2024-11-20 at 8.46.11 PM.png" width="400"> <img src="assets/Screenshot 2024-11-20 at 8.46.41 PM.png" width="600">
 
 ### Training
 We used accelerate to train the model on a single A100 GPU. We had to resize our images to 256 x 256 to ensure it doesn't go CUDA OOM since we didn't have access to more than 1 GPU. Our training time was around 3 hours.
