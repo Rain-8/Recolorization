@@ -1,24 +1,25 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+from attention import CrossAttention
 
 class DoubleConv(nn.Module):
-    """(convolution => Instance Norm => Leaky ReLU) * 2"""
+    '''
+    (convolution => Instance Norm => ReLU)
+    '''
     def __init__(self, in_channels, out_channels):
         super().__init__()
         self.double_conv = nn.Sequential(
             nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1, bias=False),
             nn.InstanceNorm2d(out_channels),
-            nn.LeakyReLU(inplace=True),
-            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1, bias=False),
-            nn.BatchNorm2d(out_channels),
-            nn.LeakyReLU(inplace=True)
+            nn.ReLU(inplace=True),
         )
 
     def forward(self, x):
         return self.double_conv(x)
-    
+ 
 
-class CrossAttention(nn.Module):
+class CrossAttentionTorch(nn.Module):
     def __init__(self, embed_dim, palette_embed, num_heads):
         super().__init__()
         self.multihead_attn = nn.MultiheadAttention(embed_dim, num_heads)
@@ -44,42 +45,49 @@ class CrossAttention(nn.Module):
         attn_output = attn_output.permute(1, 2, 0).view(b, c, h, w)  # Reshape back to (b, c, h, w)
         
         # Concatenate attention output with the original feature map
-        return torch.cat([x, attn_output], dim=1)  # Concatenate along the channel dimension
+        return x + attn_output  # Add along the channel dimension
 
 
 def adjust_target_palettes(target_palettes_emb, h, w):
-    # Starting with the initial target_palettes shape
+    # Repeat target_palettes_emb to match the dimensions of the feature map
     target_palettes = target_palettes_emb.unsqueeze(2).unsqueeze(3).repeat(1, 1, h, w)
     return target_palettes
 
 
 class RecoloringDecoder(nn.Module):
-    def __init__(self, palette_embedding_dim=64, num_heads=4):
+    def __init__(self, palette_embedding_dim=64, num_heads=1, use_cross_attn_torch=False, variable_pal_size=False):
         super().__init__()
         self.palette_embedding_dim = palette_embedding_dim
-        self.palette_fc = nn.Linear(4 * 60 * 4, palette_embedding_dim)
+        self.palette_fc = nn.Linear(4 * 24 * 3, palette_embedding_dim)
+        if variable_pal_size:
+            self.palette_fc = nn.Linear(4 * 24 * 4, palette_embedding_dim)
         self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)  
 
         # Cross-attention layers for palette conditioning at each decoding stage
-        self.cross_attn_4 = CrossAttention(256, palette_embedding_dim, num_heads)
-        self.cross_attn_3 = CrossAttention(128, palette_embedding_dim, num_heads)
-        self.cross_attn_2 = CrossAttention(64, palette_embedding_dim, num_heads)
-        self.cross_attn_1 = CrossAttention(64, palette_embedding_dim, num_heads)
+        if use_cross_attn_torch:
+            self.cross_attn_4 = CrossAttentionTorch(256, palette_embedding_dim, num_heads)
+            self.cross_attn_3 = CrossAttentionTorch(128, palette_embedding_dim, num_heads)
+            self.cross_attn_2 = CrossAttentionTorch(64, palette_embedding_dim, num_heads)
+            self.cross_attn_1 = CrossAttentionTorch(64, palette_embedding_dim, num_heads)
+        else:
+            self.cross_attn_4 = CrossAttention(256, palette_embedding_dim, num_heads)
+            self.cross_attn_3 = CrossAttention(128, palette_embedding_dim, num_heads)
+            self.cross_attn_2 = CrossAttention(64, palette_embedding_dim, num_heads)
+            self.cross_attn_1 = CrossAttention(64, palette_embedding_dim, num_heads)
 
         # DoubleConv layers for each decoding stage
         self.dconv_up_4 = DoubleConv(512, 256)
-        self.dconv_up_3 = DoubleConv(768, 128)
-        self.dconv_up_2 = DoubleConv(384, 64)
-        self.dconv_up_1 = DoubleConv(192, 64)
+        self.dconv_up_3 = DoubleConv(512, 128)
+        self.dconv_up_2 = DoubleConv(256, 64)
+        self.dconv_up_1 = DoubleConv(128, 64)
         
         # Final convolutional layer
-        self.conv_last = nn.Conv2d(128 + 1, 3, kernel_size=3, padding=1)
+        self.conv_last = nn.Conv2d(64 + 1, 3, kernel_size=3, padding=1)
 
     def forward(self, c1, c2, c3, c4, target_palettes, illu):
         bz, _, _, _ = c1.shape
-
         # Flatten and project target_palettes to create a conditioning embedding
-        target_palettes_flat = target_palettes.view(bz, -1)  # Shape: (bz, 4 * 16 * 4)
+        target_palettes_flat = target_palettes.reshape(bz, -1)  # Shape: (bz, 4 * 16 * 4)
         palette_embedding = self.palette_fc(target_palettes_flat)  # Shape: (bz, palette_embedding_dim)
 
         # Decoder with cross-attention conditioning
@@ -104,12 +112,12 @@ class RecoloringDecoder(nn.Module):
         x = self.dconv_up_1(x)
         palette_embedding_repeated = adjust_target_palettes(palette_embedding, x.size(-2), x.size(-1))
         x = self.cross_attn_1(x, palette_embedding_repeated)  # Cross-attention at the final stage
-        # x = self.up(x)
+        x = self.up(x)
 
         # Concatenate with illumination information
         illu = illu.view(illu.size(0), 1, illu.size(1), illu.size(2))
         x = torch.cat((x, illu), dim=1)
         x = self.conv_last(x)
-
+        x = torch.tanh(x)
         return x
         

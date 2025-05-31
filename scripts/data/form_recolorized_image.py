@@ -11,7 +11,7 @@ from scipy.spatial import KDTree
 
 def extract_top_colors(image_path):
     """Extracts the top colors from the image as RGB tuples."""
-    num_colors = random.randint(3, 15)  # randomly setting the length of the palette
+    num_colors = random.randint(6, 15)  # randomly setting the length of the palette
     color_thief = ColorThief(image_path)
     return color_thief.get_palette(color_count=num_colors)
 
@@ -82,7 +82,7 @@ def process_images(src_dir, tgt_dir):
     os.makedirs(f"{tgt_dir}/src_images", exist_ok=True)
     os.makedirs(f"{tgt_dir}/tgt_images", exist_ok=True)
     json_data = {}
-    image_paths = sorted(glob.glob(f"{src_dir}/*.jpeg"))
+    image_paths = sorted(glob.glob(f"{src_dir}/*.jpg"))
 
     for image_path in image_paths[:10]:
         try:
@@ -133,6 +133,6 @@ def process_images(src_dir, tgt_dir):
 # Main script
 if __name__ == "__main__":
     src_dir = "../../datasets/sample/"  # Directory containing source images
-    tgt_dir = "../../datasets/processed_data_v2/"  # Directory to save recolorized images and palettes
+    tgt_dir = "../../datasets/processed_data_v3/"  # Directory to save recolorized images and palettes
 
     process_images(src_dir, tgt_dir)

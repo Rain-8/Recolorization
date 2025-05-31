@@ -10,6 +10,10 @@ from torch.utils.data import DataLoader
 from accelerate import Accelerator
 import wandb
 
+import sys
+sys.path.append("../")
+from common_utils.train_utils.log_to_wandb import log_images_and_metrics
+
 class RecolorizeTrainer:
     def __init__(self, model, train_dataset, eval_dataset, args):
         # Initialize Accelerator
@@ -34,7 +38,7 @@ class RecolorizeTrainer:
 
         # Initialize dataloaders
         self.train_dataloader = DataLoader(train_dataset, batch_size=self.train_batch_size, shuffle=True)
-        self.eval_dataloader = DataLoader(eval_dataset, batch_size=self.val_batch_size)
+        self.eval_dataloader = DataLoader(eval_dataset, batch_size=self.val_batch_size, shuffle=True)
 
         # Optimizer and Scheduler
         self.optimizer = AdamW(self.model.parameters(), lr=args.learning_rate, weight_decay=4e-3)
@@ -61,6 +65,7 @@ class RecolorizeTrainer:
             for batch in progress_bar:
                 # Forward pass
                 src_image, tgt_image, illu, src_palette, tgt_palette = batch
+                tgt_palette = tgt_palette.flatten()
                 outputs = self.model(src_image, tgt_palette, illu)
                 loss = self.criterion(outputs, tgt_image)
                 self.accelerator.backward(loss)
@@ -73,27 +78,38 @@ class RecolorizeTrainer:
 
             avg_train_loss = total_loss / len(self.train_dataloader)
             if epoch % self.logging_interval == 0:
-                wandb.log({"epoch_train_loss": avg_train_loss, "epoch": epoch + 1})
+                wandb.log({"epoch_train_loss": avg_train_loss, "epoch": epoch + 1}, step=epoch+1)
             
             if epoch % self.checkpointing_interval == 0:
                 self.save_checkpoint(epoch)
 
             # Evaluate at the end of each epoch
             if epoch % self.validation_interval == 0:
-                self.evaluate()
+                self.evaluate(epoch)
 
-    def evaluate(self):
+    def evaluate(self, epoch):
         # Evaluation loop
         self.model.eval()
         total_loss = 0
         num_batches = len(self.eval_dataloader)
         with torch.no_grad():
-            for batch in self.eval_dataloader:
-                outputs = self.model(**batch)
-                total_loss += outputs.loss.item()
+            for batch_idx, batch in enumerate(self.eval_dataloader):
+                src_image, tgt_image, illu, src_palette, tgt_palette = batch
+                outputs = self.model(src_image, tgt_palette, illu)
+                val_loss = self.criterion(outputs, tgt_image)
+                total_loss += val_loss.item()
+                if batch_idx == 0:
+                    current_step = epoch + 1
+                    log_images_and_metrics(
+                        src_image, 
+                        outputs, 
+                        tgt_palette,
+                        current_step
+                    )
         
         avg_loss = total_loss / num_batches
         print(f"Validation Loss: {avg_loss}")
+        wandb.log({"epoch_val_loss": avg_loss}, step=epoch+1)
 
     def save_checkpoint(self, epoch):
         """Save a checkpoint with the current epoch number."""

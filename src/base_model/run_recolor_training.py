@@ -35,7 +35,7 @@ def parse_args():
 def run_training():
     args = parse_args()
     model = get_model()
-    train_data = get_data(args.train_data_path)
+    train_data = get_data(args.train_data_path, sample=args.sample)
     val_data = get_data(args.val_data_path)
     trainer = RecolorizeTrainer(model, train_dataset=train_data, eval_dataset=val_data, args=args)
     trainer.train()

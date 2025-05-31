@@ -3,18 +3,41 @@ from tqdm import tqdm
 from datetime import datetime
 
 import torch
-from torch.optim import Adam
+import torch.nn as nn 
+from torch.optim import AdamW, Adam
 from torch.utils.data import DataLoader
 
 from accelerate import Accelerator
 import wandb
 
+import sys
+sys.path.append("../")
+from common_utils.train_utils.log_to_wandb import log_images_and_metrics_custom
+
 class RecolorizeTrainer:
     def __init__(self, model, train_dataset, eval_dataset, args):
-        # Initialize Accelerator
-        self.accelerator = Accelerator()
+        """
+        Initialize the RecolorizeTrainer.
 
-        # Prepare model, optimizer, and dataloaders with accelerator
+        Args:
+            model: The PyTorch model to be trained.
+            train_dataset: The dataset used for training.
+            eval_dataset: The dataset used for evaluation.
+            args: The command line arguments.
+
+        Attributes:
+            model: The PyTorch model to be trained.
+            train_dataset: The dataset used for training.
+            eval_dataset: The dataset used for evaluation.
+            train_batch_size: The batch size used for training.
+            val_batch_size: The batch size used for evaluation.
+            validation_interval: The interval to run evaluation.
+            logging_interval: The interval to log metrics.
+            checkpointing_interval: The interval to save checkpoints.
+            checkpoint_dir: The directory to save checkpoints.
+            run_name: The name of the run.
+        """
+        self.accelerator = Accelerator()
         self.model = model
         self.train_dataset = train_dataset
         self.eval_dataset = eval_dataset
@@ -39,7 +62,7 @@ class RecolorizeTrainer:
         self.optimizer = Adam(self.model.parameters(), lr=args.learning_rate)
         self.num_epochs = args.num_epochs
         self.num_training_steps = args.num_epochs * len(self.train_dataloader)
-        
+        self.criterion = nn.MSELoss()
         # Prepare everything with Accelerator
         (
             self.model,
@@ -51,7 +74,23 @@ class RecolorizeTrainer:
         )
 
     def train(self):
-        # Training loop
+        """
+        Train the model.
+
+        The model is trained for `self.num_epochs` epochs with batches of size `self.train_batch_size`.
+
+        The training loop consists of the following steps:
+
+        1. Forward pass: The model is run on the input images and the target images are computed.
+        2. Backward pass: The loss is computed and the gradients are propagated backwards.
+        3. Optimization step: The optimizer is stepped and the gradients are zeroed.
+
+        The loss is logged to Weights & Biases at every `self.logging_interval` epochs.
+
+        The model is evaluated at every `self.validation_interval` epochs.
+
+        The model is saved at every `self.checkpointing_interval` epochs.
+        """
         self.model.train()
         for epoch in range(self.num_epochs):
             print(f"Epoch {epoch + 1}/{self.num_epochs}")
@@ -60,8 +99,8 @@ class RecolorizeTrainer:
             for batch in progress_bar:
                 # Forward pass
                 src_image, tgt_image, illu, src_palette, tgt_palette = batch
-                outputs = self.model(src_image, tgt_image, illu, tgt_palette)
-                loss = outputs.loss
+                outputs = self.model(src_image, tgt_palette, illu)
+                loss = self.criterion(outputs, tgt_image)
                 self.accelerator.backward(loss)
 
                 # Optimization step
@@ -79,20 +118,32 @@ class RecolorizeTrainer:
 
             # Evaluate at the end of each epoch
             if epoch % self.validation_interval == 0:
-                self.evaluate()
+                self.evaluate(epoch)
 
-    def evaluate(self):
+    def evaluate(self, epoch):
         # Evaluation loop
         self.model.eval()
         total_loss = 0
         num_batches = len(self.eval_dataloader)
         with torch.no_grad():
-            for batch in self.eval_dataloader:
-                outputs = self.model(**batch)
-                total_loss += outputs.loss.item()
+            for batch_idx, batch in enumerate(self.eval_dataloader):
+                src_image, tgt_image, illu, src_palette, tgt_palette = batch
+                outputs = self.model(src_image, tgt_palette, illu)
+                val_loss = self.criterion(outputs, tgt_image)
+                total_loss += val_loss.item()
+                if batch_idx == 0:
+                    current_step = epoch + 1
+                    log_images_and_metrics_custom(
+                        src_image,
+                        tgt_image, 
+                        outputs, 
+                        tgt_palette,
+                        current_step
+                    )
         
         avg_loss = total_loss / num_batches
         print(f"Validation Loss: {avg_loss}")
+        wandb.log({"epoch_val_loss": avg_loss}, step=epoch+1)
 
     def save_checkpoint(self, epoch):
         """Save a checkpoint with the current epoch number."""

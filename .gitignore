@@ -1,4 +1,15 @@
-datasets/
+datasets/IMAGE_DATASET_FOR_COLORTHIEF
+datasets/processed_palettenet_data_sample
+datasets/raw_recolor_data_sample
+datasets/sample
+**/test_results
+
+**/output
 
 # python compiled files
 **/*.pyc
+
+# large and unnecessary files
+**/*ckpts*
+**/wandb
+**/*.pt

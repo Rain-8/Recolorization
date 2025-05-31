@@ -1,0 +1,3 @@
+accelerate launch --config_file "../common_utils/configs/accelerate_single_gpu_config.yaml" run_recolor_training.py --train_batch_size 8 --val_batch_size 4 --learning_rate 0.0002 \
+ --num_epochs 1000 --validation_interval 1 --checkpointing_interval 5 --train_data_path "../../datasets/processed_palettenet_data_sample_v4/train.json" --val_data_path "../../datasets/processed_palettenet_data_sample_v4/test.json" 
+ 
